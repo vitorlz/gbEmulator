@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35222.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gbEmulator", "gbEmulator\gbEmulator.vcxproj", "{236E7EA9-64EA-44A6-A059-350B0DBE53F1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{236E7EA9-64EA-44A6-A059-350B0DBE53F1}.Debug|x64.ActiveCfg = Debug|x64
+		{236E7EA9-64EA-44A6-A059-350B0DBE53F1}.Debug|x64.Build.0 = Debug|x64
+		{236E7EA9-64EA-44A6-A059-350B0DBE53F1}.Release|x64.ActiveCfg = Release|x64
+		{236E7EA9-64EA-44A6-A059-350B0DBE53F1}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6C3B1466-6675-4972-93B2-F29357D652CA}
+	EndGlobalSection
+EndGlobal
