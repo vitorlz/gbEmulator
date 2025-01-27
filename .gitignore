@@ -400,5 +400,5 @@ FodyWeavers.xsd
 
 # Ignore roms
 
-testroms/
-roms/
+**/testroms/
+**/roms/
