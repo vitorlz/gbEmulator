@@ -15,6 +15,7 @@ public:
 	GameBoy();
 
 	void readRom(const std::string path);
+	
 	uint8_t fetch();
 	void decodeAndExecute(uint8_t opcode);
 
@@ -22,8 +23,5 @@ public:
 
 	MMU mmu;
 	PPU ppu;
-	CPU cpu;
-private:
-	
-	
+	CPU cpu;	
 };

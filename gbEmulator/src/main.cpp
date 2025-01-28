@@ -190,7 +190,7 @@ int main()
 
             lastFrameTime = currentTime;
 
-            std::cout << "fps: " << 1 / deltaTime << "\n";
+           // std::cout << "fps: " << 1 / deltaTime << "\n";
         }
 
         

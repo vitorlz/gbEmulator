@@ -48,6 +48,13 @@ uint8_t MMU::read8(uint16_t address)
 
 void MMU::write8(uint16_t address, uint8_t value)
 {
+
+
+	if (address == 0xFF01)
+	{
+		std::cout << (char)value;
+	}
+
 	if (address >= 0x8000 && address <= 0x9FFF)
 	{
 		vRam[address - 0x8000] = value;
@@ -78,7 +85,7 @@ void MMU::write8(uint16_t address, uint8_t value)
 	}
 	else if (address == 0xFFFF) // --> Interrupt Enable register (IE)
 	{
-		ie[address] = value;
+		ie[address - 0xFFFF] = value;
 	}
 }
 
