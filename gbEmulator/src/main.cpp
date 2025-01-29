@@ -140,6 +140,7 @@ int main()
     double fpsLimit = 1 / 60.0f;
     double currentTime = 0;
     double lastFrameTime = 0;
+    int frameCount = 0;
  
     // render loop
     // -----------
@@ -157,7 +158,9 @@ int main()
 
         uint8_t opcode = gb.fetch();
       
-        std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+
+
+        //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
         
         /*if ((gb.cpu.PC - 1) == 0x4000)
             std::cout << std::hex << int(opcode) << "\n";*/
@@ -172,6 +175,14 @@ int main()
         if (deltaTime >= fpsLimit)
         {
             processInput(window);
+
+            frameCount++;
+
+            if (frameCount >= 60)
+            {
+                std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+                frameCount = 0;
+            }
 
             // render
             // ------

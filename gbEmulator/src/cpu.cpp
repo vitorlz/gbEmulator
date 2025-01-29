@@ -51,7 +51,7 @@ uint16_t CPU::getHL()
 void CPU::setFlagZ(bool value)
 {
 
-	std::cout << "SET FLAG VALUE: " << (int)value << "\n";
+	/*std::cout << "SET FLAG VALUE: " << (int)value << "\n";*/
 	regs[F] = (regs[F] & ~(1 << 7)) | (value << 7);
 }
 void CPU::setFlagN(bool value)
@@ -135,7 +135,7 @@ uint16_t CPU::fetch16()
 
 void CPU::decodeAndExecute(uint8_t opcode)
 {
-	// NOT IMPLEMENTED: STOP DAA HALT
+	// NOT IMPLEMENTED: STOP DAA HALT DI EI
 
 	switch (opcode)
 	{
@@ -168,7 +168,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 					// JR NZ, i8
 					int8_t i8 = (int8_t)fetch8();
 
-					std::cout << std::dec << "jp offset: " << (int)i8 << "\n";
+					/*std::cout << std::dec << "jp offset: " << (int)i8 << "\n";*/
 
 					if (!getFlagZ())
 					{
@@ -390,7 +390,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			uint8_t u8 = fetch8();
 			write8(getHL(), u8);
 			
-			std::cout << "writing to the address in hl" << "\n";
+			/*std::cout << "writing to the address in hl" << "\n";*/
 
 			break;
 		}
@@ -429,13 +429,13 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			int8_t src = read8(getHL());
 			regs[dest] = src;
 			
-			std::cout << "PC: " << std::hex << PC << "\n";
+			/*std::cout << "PC: " << std::hex << PC << "\n";
 			std::cout << std::dec << (int)opcode << "\n";
 
 			std::cout << "ld hl" << "\n";
 			std::cout << "address stored in HL " << std::hex << getHL() << "\n";
 			std::cout << "dest: " << (int)dest << "\n";
-			std::cout << "src: " << std::hex << (int)src << "\n";
+			std::cout << "src: " << std::hex << (int)src << "\n";*/
 
 			break;
 		}
@@ -590,8 +590,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			
 			uint8_t r8 = (opcode >> 3) & 7;
 
-			std::cout << "INC R8 r8: " << std::dec << (int)r8 << "\n";
-			std::cout << "INC R8 regs[r8] before: " << std::dec << (int)regs[r8] << "\n";
+			/*std::cout << "INC R8 r8: " << std::dec << (int)r8 << "\n";
+			std::cout << "INC R8 regs[r8] before: " << std::dec << (int)regs[r8] << "\n";*/
 			
 
 			setFlagN(0);
@@ -600,9 +600,9 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			regs[r8] = regs[r8] + 1;
 
-			std::cout << "INC R8 regs[r8] after: " << std::dec << (int)regs[r8] << "\n";
+			/*std::cout << "INC R8 regs[r8] after: " << std::dec << (int)regs[r8] << "\n";
 
-			std::cout << "Z FLAG: " << std::dec << (int)getFlagZ() << "\n";
+			std::cout << "Z FLAG: " << std::dec << (int)getFlagZ() << "\n";*/
 			
 			break;
 		}
@@ -628,7 +628,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			uint8_t r8 = (opcode >> 3) & 7;
 
 			setFlagN(1);
-			setFlagH(((regs[r8] & 0x0F) < 1));
+			setFlagH(((regs[r8] & 0x0F) == 0));
 			setFlagZ((uint8_t)(regs[r8] - 1) == 0);
 
 			regs[r8] = regs[r8] - 1;
@@ -642,7 +642,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			uint8_t value = read8(getHL());
 
 			setFlagN(1);
-			setFlagH(((value & 0x0F) < 1));
+			setFlagH(((value & 0x0F) == 0));
 			setFlagZ((uint8_t)(value - 1) == 0);
 
 			write8(getHL(), value - 1);
@@ -1197,8 +1197,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 					if (!getFlagZ())
 					{
 
-						write8(--SP, regs[PC >> 8]);
-						write8(--SP, regs[PC & 0xFF]);
+						write8(--SP, PC >> 8);
+						write8(--SP, PC & 0xFF);
 
 						PC = address;
 
@@ -1216,8 +1216,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 					if (getFlagZ())
 					{
 
-						write8(--SP, regs[PC >> 8]);
-						write8(--SP, regs[PC & 0xFF]);
+						write8(--SP, PC >> 8);
+						write8(--SP, PC & 0xFF);
 
 						PC = address;
 
@@ -1236,8 +1236,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 					if (!getFlagC())
 					{
 
-						write8(--SP, regs[PC >> 8]);
-						write8(--SP, regs[PC & 0xFF]);
+						write8(--SP, PC >> 8);
+						write8(--SP, PC & 0xFF);
 
 						PC = address;
 
@@ -1255,8 +1255,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 					if (getFlagC())
 					{
 
-						write8(--SP, regs[PC >> 8]);
-						write8(--SP, regs[PC & 0xFF]);
+						write8(--SP, PC >> 8);
+						write8(--SP, PC & 0xFF);
 
 						PC = address;
 
@@ -1274,8 +1274,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		{
 			uint16_t address = fetch16();
 
-			write8(--SP, regs[PC >> 8]);
-			write8(--SP, regs[PC & 0xFF]);
+			write8(--SP, PC >> 8);
+			write8(--SP, PC & 0xFF);
 
 			PC = address;
 
@@ -1364,7 +1364,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// RET
 		case 0xC9:
 		{
-			std::cout << "RET" << "\n";
+			/*std::cout << "RET" << "\n";*/
 		
 			uint8_t lsb = read8(SP++);
 			uint8_t msb = read8(SP++);
@@ -1373,6 +1373,233 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			AddCycle();
 			
+			break;
+		}
+
+		// LD (FF00+u8),A
+		case 0xE0:
+		{
+			uint8_t u8 = fetch8();
+
+			uint16_t address = 0xFF00 | u8;
+
+			write8(address, regs[A]);
+
+			break;
+		}
+
+		// LD A,(FF00+u8)
+		case 0xF0:
+		{
+			uint8_t u8 = fetch8();
+
+			uint16_t address = 0xFF00 | u8;
+
+			regs[A] = read8(address);
+
+			break;
+		}
+
+		// LD (FF00 + C), A 
+		case 0xE2:
+		{
+		
+			uint16_t address = 0xFF00 | regs[C];
+			
+			write8(address, regs[A]);
+
+			break;
+		}
+
+
+		// LD (u16), A
+		case 0xEA:
+		{
+
+			uint16_t address = fetch16();
+
+			write8(address, regs[A]);
+
+			break;
+		}
+
+		// LD A, (FF00 + C)
+		case 0xF2:
+		{
+			uint16_t address = 0xFF00 | regs[C];
+
+			regs[A] = read8(address);
+
+			break;
+		}
+
+
+		// LD A,(u16)
+		case 0xFA:
+		{
+
+			uint16_t address = fetch16();
+
+			regs[A] = read8(address);
+
+			break;
+		}
+
+
+		// ADD SP, i8
+
+		case 0xE8:
+		{
+			int8_t i8 = (int8_t)fetch8();
+
+			setFlagZ(0);
+			setFlagN(0);
+			setFlagH(((SP & 0x0F) + (i8 & 0x0F)) > 0x0F);
+			setFlagC(((SP & 0xFF) + (i8 & 0xFF)) > 0xFF);
+			
+			AddCycle();
+
+			SP += i8;
+
+			AddCycle();
+
+			break;
+		}
+
+		// LD HL, SP+i8
+		case 0xF8:
+		{
+			int8_t i8 = (int8_t)fetch8();
+
+			setFlagZ(0);
+			setFlagN(0);
+			setFlagH(((SP & 0x0F) + (i8 & 0x0F)) > 0x0F);
+			setFlagC(((SP & 0xFF) + (i8 & 0xFF)) > 0xFF);
+
+			setHL(SP + i8);
+
+			AddCycle();
+
+			break;
+		}
+
+		// ALU A, u8
+		case 0xC6: case 0xCE: case 0xD6: case 0xDE: case 0xE6: case 0xEE: case 0xF6: case 0xFE:
+		{
+			uint8_t operation = (opcode >> 3) & 7;
+			uint8_t u8 = fetch8();
+
+			switch (operation)
+			{
+				// ADD A, u8
+				case 0x00:
+				{
+					setFlagZ((uint8_t)(regs[A] + u8) == 0);
+					setFlagN(0);
+					setFlagH(((regs[A] & 0x0F) + (u8 & 0x0F)) > 0x0F);
+					setFlagC(((uint16_t)regs[A] + (uint16_t)u8) > 0xFF);
+
+					regs[A] = regs[A] + u8;
+
+					break;
+				}
+
+				// ADC A, u8
+				case 0x01:
+				{
+					bool carry = ((uint16_t)regs[A] + (uint16_t)u8 + (uint16_t)getFlagC()) > 0xFF;
+
+					setFlagZ((uint8_t)(regs[A] + u8 + getFlagC()) == 0);
+					setFlagN(0);
+					setFlagH(((regs[A] & 0x0F) + (u8 & 0x0F) + getFlagC()) > 0x0F);
+
+					regs[A] = regs[A] + u8 + getFlagC();
+
+					setFlagC(carry);
+
+					break;
+				}
+
+				// SUB A, u8
+				case 0x02:
+				{
+					setFlagZ((uint8_t)(regs[A] - u8) == 0);
+					setFlagN(1);
+					setFlagH((regs[A] & 0x0F) < (u8 & 0x0F));
+					setFlagC(regs[A] < u8);
+
+					regs[A] = regs[A] - u8;
+
+					break;
+				}
+
+				// SBC A, u8
+				case 0x03:
+				{
+					bool carry = regs[A] < ((uint16_t)u8 + getFlagC());
+
+					setFlagZ((uint8_t)(regs[A] - u8 - getFlagC()) == 0);
+					setFlagN(1);
+					setFlagH((regs[A] & 0x0F) < ((u8 & 0x0F) + getFlagC()));
+
+					regs[A] = regs[A] - u8 - getFlagC();
+
+					setFlagC(carry);
+
+					break;
+				}
+
+				// AND A, u8
+				case 0x04:
+				{
+					setFlagZ((uint8_t)(regs[A] & u8) == 0);
+					setFlagN(0);
+					setFlagH(1);
+					setFlagC(0);
+
+					regs[A] = regs[A] & u8;
+
+					break;
+				}
+
+				// XOR A, u8
+				case 0x05:
+				{
+					setFlagZ((uint8_t)(regs[A] ^ u8) == 0);
+					setFlagN(0);
+					setFlagH(0);
+					setFlagC(0);
+
+					regs[A] = regs[A] ^ u8;
+
+					break;
+				}
+
+				// OR A, u8
+				case 0x06:
+				{
+					setFlagZ((uint8_t)(regs[A] | u8) == 0);
+					setFlagN(0);
+					setFlagH(0);
+					setFlagC(0);
+
+					regs[A] = regs[A] | u8;
+
+					break;
+				}
+
+				// CP A, u8
+				case 0x07:
+				{
+					setFlagZ((uint8_t)(regs[A] - u8) == 0);
+					setFlagN(1);
+					setFlagH((regs[A] & 0x0F) < (u8 & 0x0F));
+					setFlagC(regs[A] < u8);
+
+					break;
+				}
+			}
+
 			break;
 		}
 

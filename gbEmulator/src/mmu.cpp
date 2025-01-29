@@ -7,6 +7,7 @@
 uint8_t MMU::read8(uint16_t address)
 {
 
+	// put if def right here and it will return before the rest of the if statements if the thing is defined
 	return testArray[address];
 
 	//if (address <= 0x7FFF) // --> 16 kib rom
@@ -57,7 +58,7 @@ void MMU::write8(uint16_t address, uint8_t value)
 
 	if (address == 0xFF01)
 	{
-		std::cout << "SERIAL WRITE: " << +value;
+		std::cout <<  (char)value;
 	}
 
 	testArray[address] = value;
