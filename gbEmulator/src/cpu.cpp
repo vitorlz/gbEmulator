@@ -9,25 +9,25 @@ CPU::CPU(MMU& mmu, PPU& ppu)
 void CPU::setAF(uint16_t value)
 {
 	regs[A] = value >> 8;
-	regs[F] = value | 0xFF;
+	regs[F] = value & 0xFF;
 }
 
 void CPU::setBC(uint16_t value)
 {
 	regs[B] = value >> 8;
-	regs[C] = value | 0xFF;
+	regs[C] = value & 0xFF;
 }
 
 void CPU::setDE(uint16_t value)
 {
 	regs[D] = value >> 8;
-	regs[E] = value | 0xFF;
+	regs[E] = value & 0xFF;
 }
 
 void CPU::setHL(uint16_t value)
 {
 	regs[H] = value >> 8;
-	regs[L] = value | 0xFF;
+	regs[L] = value & 0xFF;
 }
 
 uint16_t CPU::getAF()
@@ -50,6 +50,8 @@ uint16_t CPU::getHL()
 
 void CPU::setFlagZ(bool value)
 {
+
+	std::cout << "SET FLAG VALUE: " << (int)value << "\n";
 	regs[F] = (regs[F] & ~(1 << 7)) | (value << 7);
 }
 void CPU::setFlagN(bool value)
@@ -165,6 +167,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				{
 					// JR NZ, i8
 					int8_t i8 = (int8_t)fetch8();
+
+					std::cout << std::dec << "jp offset: " << (int)i8 << "\n";
 
 					if (!getFlagZ())
 					{
@@ -586,11 +590,19 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			
 			uint8_t r8 = (opcode >> 3) & 7;
 
+			std::cout << "INC R8 r8: " << std::dec << (int)r8 << "\n";
+			std::cout << "INC R8 regs[r8] before: " << std::dec << (int)regs[r8] << "\n";
+			
+
 			setFlagN(0);
 			setFlagH(((regs[r8] & 0x0F) + 1) > 0x0F);
-			setFlagZ((regs[r8] + 1) == 0);
+			setFlagZ((uint8_t)(regs[r8] + 1) == 0);
 
 			regs[r8] = regs[r8] + 1;
+
+			std::cout << "INC R8 regs[r8] after: " << std::dec << (int)regs[r8] << "\n";
+
+			std::cout << "Z FLAG: " << std::dec << (int)getFlagZ() << "\n";
 			
 			break;
 		}
@@ -602,7 +614,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			setFlagN(0);
 			setFlagH(((value & 0x0F) + 1) > 0x0F);
-			setFlagZ((value + 1) == 0);
+			setFlagZ((uint8_t)(value + 1) == 0);
 
 			write8(getHL(), value + 1);
 
@@ -617,7 +629,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			setFlagN(1);
 			setFlagH(((regs[r8] & 0x0F) < 1));
-			setFlagZ((regs[r8] - 1) == 0);
+			setFlagZ((uint8_t)(regs[r8] - 1) == 0);
 
 			regs[r8] = regs[r8] - 1;
 
@@ -631,7 +643,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			setFlagN(1);
 			setFlagH(((value & 0x0F) < 1));
-			setFlagZ((value - 1) == 0);
+			setFlagZ((uint8_t)(value - 1) == 0);
 
 			write8(getHL(), value - 1);
 
@@ -751,7 +763,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// ADD A, r8
 				case 0x00:
 				{
-					setFlagZ((regs[A] + regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[A] + regs[r8]) == 0);
 					setFlagN(0);
 					setFlagH(((regs[A] & 0x0F) + (regs[r8] & 0x0F)) > 0x0F);
 					setFlagC(((uint16_t)regs[A] + (uint16_t)regs[r8]) > 0xFF);
@@ -766,7 +778,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				{
 					bool carry = ((uint16_t)regs[A] + (uint16_t)regs[r8] + (uint16_t)getFlagC()) > 0xFF;
 
-					setFlagZ((regs[A] + regs[r8] + getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[A] + regs[r8] + getFlagC()) == 0);
 					setFlagN(0);
 					setFlagH(( (regs[A] & 0x0F) + (regs[r8] & 0x0F) + getFlagC() ) > 0x0F);
 					
@@ -780,7 +792,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// SUB A, r8
 				case 0x02:
 				{
-					setFlagZ((regs[A] - regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[A] - regs[r8]) == 0);
 					setFlagN(1);
 					setFlagH((regs[A] & 0x0F) < (regs[r8] & 0x0F));
 					setFlagC(regs[A] < regs[r8]);
@@ -795,7 +807,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				{
 					bool carry = regs[A] < ((uint16_t)regs[r8] + getFlagC());
 
-					setFlagZ((regs[A] - regs[r8] - getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[A] - regs[r8] - getFlagC()) == 0);
 					setFlagN(1);
 					setFlagH( (regs[A] & 0x0F) < ((regs[r8] & 0x0F) + getFlagC()) );
 					
@@ -809,7 +821,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// AND A, r8
 				case 0x04:
 				{
-					setFlagZ((regs[A] & regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[A] & regs[r8]) == 0);
 					setFlagN(0);
 					setFlagH(1);
 					setFlagC(0);
@@ -822,7 +834,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// XOR A, r8
 				case 0x05:
 				{
-					setFlagZ((regs[A] ^ regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[A] ^ regs[r8]) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
@@ -835,7 +847,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// OR A, r8
 				case 0x06:
 				{
-					setFlagZ((regs[A] | regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[A] | regs[r8]) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
@@ -848,7 +860,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// CP A, r8
 				case 0x07:
 				{
-					setFlagZ((regs[A] - regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[A] - regs[r8]) == 0);
 					setFlagN(1);
 					setFlagH((regs[A] & 0x0F) < (regs[r8] & 0x0F));
 					setFlagC(regs[A] < regs[r8]);
@@ -872,7 +884,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// ADD A, (HL)
 				case 0x00:
 				{
-					setFlagZ((regs[A] + val) == 0);
+					setFlagZ((uint8_t)(regs[A] + val) == 0);
 					setFlagN(0);
 					setFlagH(((regs[A] & 0x0F) + (val & 0x0F)) > 0x0F);
 					setFlagC(((uint16_t)regs[A] + (uint16_t)val) > 0xFF);
@@ -887,7 +899,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				{
 					bool carry = ((uint16_t)regs[A] + (uint16_t)val + (uint16_t)getFlagC()) > 0xFF;
 
-					setFlagZ((regs[A] + val + getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[A] + val + getFlagC()) == 0);
 					setFlagN(0);
 					setFlagH(((regs[A] & 0x0F) + (val & 0x0F) + getFlagC()) > 0x0F);
 
@@ -901,7 +913,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// SUB A, (HL)
 				case 0x02:
 				{
-					setFlagZ((regs[A] - val) == 0);
+					setFlagZ((uint8_t)(regs[A] - val) == 0);
 					setFlagN(1);
 					setFlagH((regs[A] & 0x0F) < (val & 0x0F));
 					setFlagC(regs[A] < val);
@@ -916,7 +928,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				{
 					bool carry = regs[A] < ((uint16_t)val + getFlagC());
 
-					setFlagZ((regs[A] - val - getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[A] - val - getFlagC()) == 0);
 					setFlagN(1);
 					setFlagH((regs[A] & 0x0F) < ((val & 0x0F) + getFlagC()));
 
@@ -930,7 +942,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// AND A, (HL)
 				case 0x04:
 				{
-					setFlagZ((regs[A] & val) == 0);
+					setFlagZ((uint8_t)(regs[A] & val) == 0);
 					setFlagN(0);
 					setFlagH(1);
 					setFlagC(0);
@@ -943,7 +955,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// XOR A, (HL)
 				case 0x05:
 				{
-					setFlagZ((regs[A] ^ val) == 0);
+					setFlagZ((uint8_t)(regs[A] ^ val) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
@@ -956,7 +968,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// OR A, (HL)
 				case 0x06:
 				{
-					setFlagZ((regs[A] | val) == 0);
+					setFlagZ((uint8_t)(regs[A] | val) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
@@ -969,7 +981,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// CP A, (HL)
 				case 0x07:
 				{
-					setFlagZ((regs[A] - val) == 0);
+					setFlagZ((uint8_t)(regs[A] - val) == 0);
 					setFlagN(1);
 					setFlagH((regs[A] & 0x0F) < (val & 0x0F));
 					setFlagC(regs[A] < val);
@@ -981,12 +993,390 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			break;
 		}
+
+		// POP r16
+		case 0xC1: case 0xD1: case 0xE1: case 0xF1:
+		{
+			uint8_t r16 = (opcode >> 4) & 3;
+			
+			switch (r16)
+			{
+				case 0x00:
+				{
+					regs[C] = read8(SP++);
+					regs[B] = read8(SP++);
+					
+					break;
+				}
+
+				case 0x01:
+				{
+					regs[E] = read8(SP++);
+					regs[D] = read8(SP++);
+
+					break;
+				}
+
+				case 0x02:
+				{
+					regs[L] = read8(SP++);
+					regs[H] = read8(SP++);
+
+					break;
+				}
+
+				case 0x03:
+				{
+					regs[F] = read8(SP++);
+					regs[A] = read8(SP++);
+
+					break;
+				}
+			}
+
+			break;
+		}
+
+
+		// PUSH r16
+		case 0xC5: case 0xD5: case 0xE5: case 0xF5:
+		{
+			uint8_t r16 = (opcode >> 4) & 3;
+
+			switch (r16)
+			{
+				case 0x00:
+				{
+
+					AddCycle();
+
+					write8(--SP, regs[B]);
+					write8(--SP, regs[C]);
+
+					break;
+				}
+
+				case 0x01:
+				{
+
+					AddCycle();
+
+					write8(--SP, regs[D]);
+					write8(--SP, regs[E]);
+
+					break;
+				}
+
+				case 0x02:
+				{
+
+					AddCycle();
+
+					write8(--SP, regs[H]);
+					write8(--SP, regs[L]);
+
+					break;
+				}
+
+				case 0x03:
+				{
+					AddCycle();
+				
+					write8(--SP, regs[A]);
+					write8(--SP, (regs[F] & (0xFF << 4)));
+
+					break;
+				}
+			}
+
+			break;
+		}
+
+		// JP cc, u16
+		case 0xC2: case 0xCA: case 0xD2: case 0xDA:
+		{
+			uint8_t cc = (opcode >> 3) & 3;
+			switch (cc)
+			{
+				// NZ
+				case 0x00:
+				{
+					uint16_t address = fetch16();
+
+					if (!getFlagZ())
+					{
+						PC = address;
+
+						AddCycle();
+					}
+					
+
+					break;
+				}
+
+				// Z
+				case 0x01:
+				{
+					uint16_t address = fetch16();
+
+					if (getFlagZ())
+					{
+						PC = address;
+
+						AddCycle();
+					}
+
+					break;
+				}
+
+				// NC
+				case 0x02:
+				{
+					uint16_t address = fetch16();
+
+					if (!getFlagC())
+					{
+						PC = address;
+
+						AddCycle();
+					}
+
+					break;
+				}
+
+				// C
+				case 0x03:
+				{
+					uint16_t address = fetch16();
+
+					if (getFlagC())
+					{
+						PC = address;
+
+						AddCycle();
+					}
+
+					break;
+				}
+			}
+
+			break;
+		}
+
+		// JP u16
+		case 0xC3:
+		{
+			uint16_t address = fetch16();
+
+			PC = address;
+			AddCycle();
+
+			break;
+		}
+
+		// JP HL
+		case 0xE9:
+		{
+			PC = getHL();
+			
+			break;
+		}
 		
+		// CALL cc, u16
+		case 0xC4: case 0xCC: case 0xD4: case 0xDC:
+		{
+			uint8_t cc = (opcode >> 3) & 3;
+
+			switch (cc)
+			{
+				// NZ
+				case 0x00:
+				{
+					uint16_t address = fetch16();
+
+					if (!getFlagZ())
+					{
+
+						write8(--SP, regs[PC >> 8]);
+						write8(--SP, regs[PC & 0xFF]);
+
+						PC = address;
+
+						AddCycle();
+					}
+
+					break;	
+				}
+
+				// Z
+				case 0x01:
+				{
+					uint16_t address = fetch16();
+
+					if (getFlagZ())
+					{
+
+						write8(--SP, regs[PC >> 8]);
+						write8(--SP, regs[PC & 0xFF]);
+
+						PC = address;
+
+						AddCycle();
+					}
+
+
+					break;
+				}
+
+				// NC
+				case 0x02:
+				{
+					uint16_t address = fetch16();
+
+					if (!getFlagC())
+					{
+
+						write8(--SP, regs[PC >> 8]);
+						write8(--SP, regs[PC & 0xFF]);
+
+						PC = address;
+
+						AddCycle();
+					}
+
+					break;
+				}
+
+				// C
+				case 0x03:
+				{
+					uint16_t address = fetch16();
+
+					if (getFlagC())
+					{
+
+						write8(--SP, regs[PC >> 8]);
+						write8(--SP, regs[PC & 0xFF]);
+
+						PC = address;
+
+						AddCycle();
+					}
+
+					break;
+				}
+			}
+			break;
+		}
+
+		// CALL u16
+		case 0xCD:
+		{
+			uint16_t address = fetch16();
+
+			write8(--SP, regs[PC >> 8]);
+			write8(--SP, regs[PC & 0xFF]);
+
+			PC = address;
+
+			AddCycle();
+			
+			break;
+		}
+
+		// RET cc
+
+		case 0xC0: case 0xC8: case 0xD0: case 0xD8:
+		{
+			uint8_t cc = (opcode >> 3) & 3;
+			
+			switch (cc)
+			{
+				// NZ
+				case 0x00:
+				{
+					AddCycle();
+					if (!getFlagZ())
+					{
+						uint8_t lsb = read8(SP++);
+						uint8_t msb = read8(SP++);
+
+						PC = (msb << 8) | lsb;
+
+						AddCycle();
+					}
+					break;
+				}
+
+				// Z
+				case 0x01:
+				{
+					AddCycle();
+					if (getFlagZ())
+					{
+						uint8_t lsb = read8(SP++);
+						uint8_t msb = read8(SP++);
+
+						PC = (msb << 8) | lsb;
+
+						AddCycle();
+					}
+					break;
+				}
+
+				// NC
+				case 0x02:
+				{
+					AddCycle();
+					if (!getFlagC())
+					{
+						uint8_t lsb = read8(SP++);
+						uint8_t msb = read8(SP++);
+
+						PC = (msb << 8) | lsb;
+
+						AddCycle();
+					}
+					break;
+				}
+
+				// C
+				case 0x03:
+				{
+					AddCycle();
+					if (getFlagC())
+					{
+						uint8_t lsb = read8(SP++);
+						uint8_t msb = read8(SP++);
+
+						PC = (msb << 8) | lsb;
+
+						AddCycle();
+					}
+					break;
+				}
+			}
+
+			break;
+		}
+
+
+		// RET
+		case 0xC9:
+		{
+			std::cout << "RET" << "\n";
+		
+			uint8_t lsb = read8(SP++);
+			uint8_t msb = read8(SP++);
+
+			PC = (msb << 8) | lsb;
+
+			AddCycle();
+			
+			break;
+		}
+
+
 	}
-
-
-
-
-
 
 }

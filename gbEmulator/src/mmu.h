@@ -6,6 +6,8 @@ class MMU
 {
 public:
 
+	uint8_t testArray[0x10000];
+
 	uint8_t bootrom[0x0100]; // --> this overlaps the rom when the program starts up and then handles control over to the actual 
 	// cartridge rom at pc = 0x100. At the beginning when pc is at 0x00 - 0x100 range read boot rom array. Once pc reaches 0x100 subsequent memory
 	// reads the cartridge array. Could probably be done with just a bool ex: if(pc == 0x0100 && !bootromDone) bootromDone = true

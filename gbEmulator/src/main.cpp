@@ -140,8 +140,7 @@ int main()
     double fpsLimit = 1 / 60.0f;
     double currentTime = 0;
     double lastFrameTime = 0;
-
-
+ 
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -158,12 +157,14 @@ int main()
 
         uint8_t opcode = gb.fetch();
       
-        //std::cout << std::dec << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+        std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
         
         /*if ((gb.cpu.PC - 1) == 0x4000)
             std::cout << std::hex << int(opcode) << "\n";*/
 
         gb.decodeAndExecute(opcode);
+
+
      
         // input
         // -----
