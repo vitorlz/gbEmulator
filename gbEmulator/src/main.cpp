@@ -131,7 +131,7 @@ int main()
 
     
     GameBoy gb;
-    gb.readRom("res/testroms/06-ld r,r.gb");
+    gb.readRom("res/testroms/09-op r,r.gb");
     
 
     // uncomment this call to draw in wireframe polygons.
