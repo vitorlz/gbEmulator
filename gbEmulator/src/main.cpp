@@ -141,7 +141,7 @@ int main()
     double currentTime = 0;
     double lastFrameTime = 0;
     int frameCount = 0;
- 
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))

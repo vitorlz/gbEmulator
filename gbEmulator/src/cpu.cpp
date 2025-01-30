@@ -697,7 +697,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			break;
 		}
 
-		// RRCA
+		// RRA
 		case 0x1F:
 		{
 			uint8_t value = regs[A];
@@ -1447,7 +1447,6 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 
 		// ADD SP, i8
-
 		case 0xE8:
 		{
 			int8_t i8 = (int8_t)fetch8();
@@ -1481,6 +1480,14 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			AddCycle();
 
 			break;
+		}
+
+		// LD SP, HL
+		case 0xF9:
+		{
+			SP = getHL();
+
+			AddCycle();
 		}
 
 		// ALU A, u8
@@ -1602,6 +1609,318 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			break;
 		}
+
+		// RST
+		case 0xC7: case 0xCF: case 0xD7: case 0xDF: case 0xE7: case 0xEF: case 0xF7: case 0xFF:
+		{
+
+			uint16_t address = (opcode & 0b00111000);
+
+			write8(--SP, PC >> 8);
+			write8(--SP, PC & 0xFF);
+
+			PC = address;
+
+			AddCycle();
+
+			break;
+		}
+
+
+		// CB PREFIX INSTRUCTIONS
+
+		case 0xCB:
+		{
+			uint8_t suffix = fetch8();
+			
+			switch (suffix)
+			{
+				case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x07:
+				case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0F:
+				case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x17:
+				case 0x18: case 0x19: case 0x1A: case 0x1B: case 0x1C: case 0x1D: case 0x1F:
+				case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x27:
+				case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2F:
+				case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x37:
+				case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3F:
+				{
+					uint8_t operation = (suffix >> 3) & 7;
+					uint8_t r8 = suffix & 7;
+
+					switch (operation)
+					{
+						// RLC r8
+						case 0x00:
+						{
+							uint8_t value = regs[r8];
+
+							setFlagC((value >> 7) & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							regs[r8] = (value << 1) | getFlagC();
+
+							setFlagZ(regs[r8] == 0);
+
+							break;
+						}
+
+						// RRC r8
+						case 0x01:
+						{
+							uint8_t value = regs[r8];
+
+							setFlagC(value & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							regs[r8] = (value >> 1) | (getFlagC() << 7);
+
+							setFlagZ(regs[r8] == 0);
+
+							break;
+						}
+
+						// RL r8
+						case 0x02:
+						{
+							uint8_t value = regs[r8];
+
+							uint8_t carry = getFlagC();
+							setFlagC((value >> 7) & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							regs[r8] = (value << 1) | carry;
+
+							setFlagZ(regs[r8] == 0);
+
+							break;
+						}
+
+						// RR r8
+						case 0x03:
+						{
+							uint8_t value = regs[r8];
+
+							uint8_t carry = getFlagC();
+							setFlagC(value & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							regs[r8] = (value >> 1) | (carry << 7);
+
+							setFlagZ(regs[r8] == 0);
+
+							break;
+						}
+
+						// SLA r8
+						case 0x04:
+						{
+
+							uint8_t value = regs[r8];
+
+							setFlagC((value >> 7) & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							regs[r8] = (value << 1);
+
+							setFlagZ(regs[r8] == 0);
+
+
+							break;
+						}
+
+						// SRA r8
+						case 0x05:
+						{
+							uint8_t value = regs[r8];
+
+							uint8_t b7 = (regs[r8] >> 7) & 1;
+
+							setFlagC(value & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							regs[r8] = (value >> 1) | (b7 << 7);
+
+							setFlagZ(regs[r8] == 0);
+
+							break;
+						}
+
+						
+						// SWAP r8
+						case 0x06:
+						{
+							regs[r8] = (regs[r8] >> 4) | (regs[r8] << 4);
+
+							break;
+						}
+
+						// SRL r8
+						case 0x07:
+						{
+							uint8_t value = regs[r8];
+
+							setFlagC(value & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							regs[r8] = (value >> 1);
+
+							setFlagZ(regs[r8] == 0);
+
+							break;
+						}
+
+					}
+
+					break;
+				}
+
+
+				case 0x06: case 0x0E: case 0x16: case 0x1E: case 0x26: case 0x2E:  case 0x36: case 0x3E:
+				{
+					uint8_t operation = (suffix >> 3) & 7;
+					uint8_t value = read8(getHL());
+
+					switch (operation)
+					{
+						// RLC (HL)
+						case 0x00:
+						{
+							setFlagC((value >> 7) & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							uint8_t result = (value << 1) | getFlagC();
+							write8(getHL(), result);
+
+							setFlagZ(result == 0);
+
+							break;
+						}
+
+						// RRC (HL)
+						case 0x01:
+						{
+							setFlagC(value & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							uint8_t result = (value >> 1) | (getFlagC() << 7);
+							write8(getHL(), result);
+
+							setFlagZ(result == 0);
+
+							break;
+						}
+
+						// RL (HL)
+						case 0x02:
+						{
+							
+							uint8_t carry = getFlagC();
+							setFlagC((value >> 7) & 1);
+
+							setFlagN(0);
+							setFlagH(0);
+
+							uint8_t result = (value << 1) | carry;
+							write8(getHL(), result);
+
+							setFlagZ(result == 0);
+
+							break;
+						}
+
+						// RR (HL)
+						case 0x03:
+						{
+							uint8_t carry = getFlagC();
+							setFlagC(value & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							uint8_t result = (value >> 1) | (carry << 7);
+							write8(getHL(), result);
+
+							setFlagZ(result == 0);
+
+							break;
+						}
+
+						// SLA (HL)
+						case 0x04:
+						{
+							setFlagC((value >> 7) & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							uint8_t result = (value << 1);
+							write8(getHL(), result);
+
+							setFlagZ(result == 0);
+
+							break;
+						}
+
+						// SRA (HL)
+						case 0x05:
+						{
+							uint8_t b7 = (value >> 7) & 1;
+
+							setFlagC(value & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							uint8_t result = (value >> 1) | (b7 << 7);
+							write8(getHL(), result);
+
+							setFlagZ(result == 0);
+
+							break;
+						}
+
+
+						// SWAP (HL)
+						case 0x06:
+						{
+							value = (value >> 4) | (value << 4);
+							write8(getHL(), value);
+
+							break;
+						}
+
+						// SRL (HL)
+						case 0x07:
+						{
+							setFlagC(value & 1);
+							setFlagN(0);
+							setFlagH(0);
+
+							uint8_t result = (value >> 1);
+
+							setFlagZ(result == 0);
+
+							break;
+						}
+					}
+
+					break;
+				}
+
+
+			}
+
+
+			break;
+		}
+
+		
 
 
 	}
