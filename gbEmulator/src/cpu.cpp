@@ -137,6 +137,13 @@ void CPU::decodeAndExecute(uint8_t opcode)
 {
 	// NOT IMPLEMENTED: STOP DAA HALT DI EI RETI
 
+	if (updateIME)
+	{
+		IME = 1;
+
+		updateIME = 0;
+	}
+
 	switch (opcode)
 	{
 
@@ -1381,13 +1388,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// RETI
 		case 0xD9:
 		{
-
-			//std::cout << "RETI CALLED" << "\n";
-
 			uint8_t lsb = read8(SP++);
 			uint8_t msb = read8(SP++);
 
 			PC = (msb << 8) | lsb;
+
+			IME = 1;
 
 			AddCycle();
 
@@ -1642,6 +1648,74 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			PC = address;
 
 			AddCycle();
+
+			break;
+		}
+
+		// DI
+		case 0xF3:
+		{
+			IME = 0;
+
+			break;
+		}
+
+		// EI
+		case 0xFB:
+		{
+			updateIME = 1;
+
+			break;
+		}
+		
+		// HALT
+		case 0x76:
+		{
+
+
+			break;
+		}
+
+		// DAA
+		case 0x27:
+		{
+			if (getFlagN())
+			{
+				uint8_t adj = 0x00;
+
+				if (getFlagH())
+				{
+					adj += 0x06;
+				}
+
+				if (getFlagC())
+				{
+					adj += 0x60;
+				}
+				
+				regs[A] = regs[A] - adj;
+			}
+			else
+			{
+				uint8_t adj = 0x00;
+
+				if (getFlagC() || (regs[A] > 0x99))
+				{
+					adj += 0x60;
+
+					setFlagC(1);
+				}
+
+				if (getFlagH() || ((regs[A] & 0x0F) > 0x09))
+				{
+					adj += 0x06;
+				}
+			
+				regs[A] = regs[A] + adj;
+			}
+
+			setFlagZ(regs[A] == 0);
+			setFlagH(0);
 
 			break;
 		}
@@ -2050,5 +2124,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		}
 
 	}
+
+
+	// Check for interrupts here
 
 }

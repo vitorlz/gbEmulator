@@ -124,7 +124,6 @@ void JsonTest::RunTest(const std::string path)
 					<< "IE: " << std::dec << test["final"]["ei"] << " "
 					<< "\n";
 
-
 				std::cout << "YOUR RESULT:         "
 					<< "PC: " << std::dec << (int)gb.cpu.PC << " "
 					<< "SP: " << std::dec << (int)gb.cpu.SP << " "

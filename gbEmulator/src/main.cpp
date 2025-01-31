@@ -133,7 +133,7 @@ int main()
 
     
     GameBoy gb;
-   // gb.readRom("res/testroms/11-op a,(hl).gb");
+    gb.readRom("res/testroms/02-interrupts.gb");
     
 
     // uncomment this call to draw in wireframe polygons.
@@ -145,8 +145,8 @@ int main()
     int frameCount = 0;
 
 
-    JsonTest jsonTest(gb);
-    jsonTest.RunAllTests();
+    //JsonTest jsonTest(gb);
+    //jsonTest.RunAllTests();
    
 
     // render loop
@@ -163,14 +163,14 @@ int main()
         currentTime = glfwGetTime();
         double deltaTime = currentTime - lastFrameTime;
 
-       // uint8_t opcode = gb.fetch();
+        uint8_t opcode = gb.fetch();
       
         //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
         
         /*if ((gb.cpu.PC - 1) == 0x4000)
             std::cout << std::hex << int(opcode) << "\n";*/
 
-       // gb.decodeAndExecute(opcode);
+        gb.decodeAndExecute(opcode);
 
 
      

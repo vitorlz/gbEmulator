@@ -50,6 +50,8 @@ public:
 							// and increment when popping a byte.
 	
 	bool IME = 0;
+
+	bool updateIME = 0;
 	void AddCycle(); // --> increment tCycles by 4 and tick systems 4x.
 
 	
