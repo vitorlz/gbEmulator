@@ -57,7 +57,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>vendor/glad/include;vendor/GLFW/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor/glad/include;vendor/GLFW/include;vendor/nlohmann/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -74,7 +74,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>vendor/glad/include;vendor/GLFW/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor/glad/include;vendor/GLFW/include;vendor/nlohmann/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -88,6 +89,7 @@
   <ItemGroup>
     <ClCompile Include="src\cpu.cpp" />
     <ClCompile Include="src\gb.cpp" />
+    <ClCompile Include="src\JsonTest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mmu.cpp" />
     <ClCompile Include="src\ppu.cpp" />
@@ -96,6 +98,7 @@
   <ItemGroup>
     <ClInclude Include="src\cpu.h" />
     <ClInclude Include="src\gb.h" />
+    <ClInclude Include="src\JsonTest.h" />
     <ClInclude Include="src\mmu.h" />
     <ClInclude Include="src\ppu.h" />
   </ItemGroup>

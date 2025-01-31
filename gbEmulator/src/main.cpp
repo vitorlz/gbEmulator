@@ -5,6 +5,8 @@
 #include <iostream>
 #include <limits>
 
+#include "JsonTest.h"
+
 #include "gb.h"
 
 
@@ -131,7 +133,7 @@ int main()
 
     
     GameBoy gb;
-    gb.readRom("res/testroms/09-op r,r.gb");
+   // gb.readRom("res/testroms/11-op a,(hl).gb");
     
 
     // uncomment this call to draw in wireframe polygons.
@@ -141,6 +143,11 @@ int main()
     double currentTime = 0;
     double lastFrameTime = 0;
     int frameCount = 0;
+
+
+    JsonTest jsonTest(gb);
+    jsonTest.RunAllTests();
+   
 
     // render loop
     // -----------
@@ -156,16 +163,14 @@ int main()
         currentTime = glfwGetTime();
         double deltaTime = currentTime - lastFrameTime;
 
-        uint8_t opcode = gb.fetch();
+       // uint8_t opcode = gb.fetch();
       
-
-
         //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
         
         /*if ((gb.cpu.PC - 1) == 0x4000)
             std::cout << std::hex << int(opcode) << "\n";*/
 
-        gb.decodeAndExecute(opcode);
+       // gb.decodeAndExecute(opcode);
 
 
      
@@ -180,7 +185,7 @@ int main()
 
             if (frameCount >= 60)
             {
-                std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+                //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
                 frameCount = 0;
             }
 

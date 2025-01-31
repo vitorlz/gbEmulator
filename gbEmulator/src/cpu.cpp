@@ -165,13 +165,18 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			{
 				case 0x00:
 				{
+
+					//std::cout << "RUNNNING JR NZ, i8" << "\n";
+					
 					// JR NZ, i8
 					int8_t i8 = (int8_t)fetch8();
 
-					/*std::cout << std::dec << "jp offset: " << (int)i8 << "\n";*/
+					//std::cout << std::dec << "jp offset: " << (int)i8 << "\n";
 
 					if (!getFlagZ())
 					{
+
+						//std::cout << std::dec << "FLAG WHEN JUMPING: " << getFlagZ() << "\n";
 						PC += i8;
 
 						AddCycle();
@@ -588,8 +593,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			
 			uint8_t r8 = (opcode >> 3) & 7;
 
-			/*std::cout << "INC R8 r8: " << std::dec << (int)r8 << "\n";
-			std::cout << "INC R8 regs[r8] before: " << std::dec << (int)regs[r8] << "\n";*/
+			//std::cout << "INC R8 r8: " << std::dec << (int)r8 << "\n";
+			//std::cout << "INC R8 regs[r8] before: " << std::dec << (int)regs[r8] << "\n";
 			
 
 			setFlagN(0);
@@ -598,9 +603,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			regs[r8] = regs[r8] + 1;
 
-			/*std::cout << "INC R8 regs[r8] after: " << std::dec << (int)regs[r8] << "\n";
-
-			std::cout << "Z FLAG: " << std::dec << (int)getFlagZ() << "\n";*/
+			//std::cout << "INC R8 regs[r8] after: " << std::dec << (int)regs[r8] << "\n";
+			//std::cout << "Z FLAG: " << std::dec << (int)getFlagZ() << "\n";
 			
 			break;
 		}
@@ -1025,7 +1029,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 				case 0x03:
 				{
-					regs[F] = read8(SP++);
+					regs[F] = read8(SP++) & (0xFF << 4);
 					regs[A] = read8(SP++);
 
 					break;
@@ -1374,6 +1378,22 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			break;
 		}
 
+		// RETI
+		case 0xD9:
+		{
+
+			//std::cout << "RETI CALLED" << "\n";
+
+			uint8_t lsb = read8(SP++);
+			uint8_t msb = read8(SP++);
+
+			PC = (msb << 8) | lsb;
+
+			AddCycle();
+
+			break;
+		}
+
 		// LD (FF00+u8),A
 		case 0xE0:
 		{
@@ -1486,6 +1506,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			SP = getHL();
 
 			AddCycle();
+
+			break;
 		}
 
 		// ALU A, u8

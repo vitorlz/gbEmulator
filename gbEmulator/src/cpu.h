@@ -47,9 +47,12 @@ public:
 
 	uint16_t SP = 0xFFFE; // the stack resides towards the end of the gb's memory. It grows AWAY from the end of the memory, so the "TOP" of the
 	uint16_t PC = 0x0100; // stack is actually in the stack's lowest memory address. That is why we decrement the stack pointer by 1 when pushing a byte
-						// and increment when popping a byte.
+							// and increment when popping a byte.
+	
+	bool IME = 0;
 	void AddCycle(); // --> increment tCycles by 4 and tick systems 4x.
 
+	
 	unsigned int tCycles;
 
 	uint8_t fetch8(); // --> same as read but reads using PC and increases it
