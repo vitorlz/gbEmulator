@@ -134,32 +134,20 @@ void CPU::handleInterrupts()
 
 		if ((IE & IF) != 0)
 		{
-			//std::cout << "halt deactivated" << "\n";
 			HALT = false;
 		}
-		
-		//std::cout << "IE: " << std::dec << (int)IE << "\n";
-		//std::cout << "IF: " << std::dec << (int)IF << "\n";
-		
 	}
 
-	if (HALT)
+	if (!IME || HALT)
 	{
 		return;
 	}
 
-	if (!IME)
-	{
-		return;
-	}
-
-	
-	// two m-cycles while nothing happens
-	AddCycle();
-	AddCycle();
-	
 	if (isInterruptRequested(TIMER) && isInterruptEnabled(TIMER))
 	{
+		// two m-cycles while nothing happens
+		AddCycle();
+		AddCycle();
 
 		cancelInterrupt(TIMER);
 		IME = 0;
@@ -173,7 +161,6 @@ void CPU::handleInterrupts()
 	}
 	
 }
-
 
 void CPU::write8(uint16_t address, uint8_t value)
 {
@@ -321,7 +308,7 @@ uint16_t CPU::fetch16()
 
 void CPU::decodeAndExecute(uint8_t opcode)
 {
-	// NOT IMPLEMENTED: STOP HALT
+	// NOT IMPLEMENTED: STOP 
 
 	if (updateIME)
 	{
