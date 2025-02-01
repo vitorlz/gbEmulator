@@ -144,11 +144,9 @@ int main()
     double lastFrameTime = 0;
     int frameCount = 0;
 
-
     //JsonTest jsonTest(gb);
     //jsonTest.RunAllTests();
-   
-
+      
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -162,17 +160,24 @@ int main()
 
         currentTime = glfwGetTime();
         double deltaTime = currentTime - lastFrameTime;
+       
+        if (!gb.isCPUHalted())
+        {
+            uint8_t opcode = gb.fetch();
 
-        uint8_t opcode = gb.fetch();
-      
-        //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
-        
-        /*if ((gb.cpu.PC - 1) == 0x4000)
-            std::cout << std::hex << int(opcode) << "\n";*/
+            //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
 
-        gb.decodeAndExecute(opcode);
+            /*if ((gb.cpu.PC - 1) == 0x4000)
+                std::cout << std::hex << int(opcode) << "\n";*/
 
-
+            gb.decodeAndExecute(opcode);
+        }
+        else
+        {
+            gb.cpu.AddCycle();
+        }
+       
+        gb.handleInterrupts();
      
         // input
         // -----

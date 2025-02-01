@@ -86,13 +86,114 @@ bool CPU::getFlagC()
 
 uint8_t CPU::read8(uint16_t address)
 {
-	return mmu.read8(address);
+	uint8_t val = mmu.read8(address);
 	AddCycle();
+
+	return val;
 }
+
+void CPU::requestInterrupt(Interrupt type)
+{
+	uint8_t IF = mmu.read8(IF_ADDRESS);
+
+	IF = IF | (1 << type);
+
+	mmu.write8(IF_ADDRESS, IF);
+}
+
+void CPU::cancelInterrupt(Interrupt type)
+{
+	uint8_t IF = mmu.read8(IF_ADDRESS);
+
+	IF = IF & ~(1 << type);
+
+	mmu.write8(IF_ADDRESS, IF);
+}
+
+bool CPU::isInterruptRequested(Interrupt type)
+{
+	uint8_t IF = mmu.read8(IF_ADDRESS);
+
+	return (IF >> type) & 1;
+}
+
+bool CPU::isInterruptEnabled(Interrupt type)
+{
+	uint8_t IE = mmu.read8(IE_ADDRESS);
+
+	return (IE >> type) & 1;
+}
+
+
+void CPU::handleInterrupts()
+{
+	if (HALT)
+	{
+		uint8_t IE = mmu.read8(IE_ADDRESS);
+		uint8_t IF = mmu.read8(IF_ADDRESS);
+
+		if ((IE & IF) != 0)
+		{
+			//std::cout << "halt deactivated" << "\n";
+			HALT = false;
+		}
+		
+		//std::cout << "IE: " << std::dec << (int)IE << "\n";
+		//std::cout << "IF: " << std::dec << (int)IF << "\n";
+		
+	}
+
+	if (HALT)
+	{
+		return;
+	}
+
+	if (!IME)
+	{
+		return;
+	}
+
+	
+	// two m-cycles while nothing happens
+	AddCycle();
+	AddCycle();
+	
+	if (isInterruptRequested(TIMER) && isInterruptEnabled(TIMER))
+	{
+
+		cancelInterrupt(TIMER);
+		IME = 0;
+
+		write8(--SP, PC >> 8);
+		write8(--SP, PC & 0xFF);
+
+		PC = 0x50;
+
+		AddCycle();
+	}
+	
+}
+
 
 void CPU::write8(uint16_t address, uint8_t value)
 {
+	
+	if (address == DIV_ADDRESS)
+	{
+		value = 0x00;
+		DIV = 0;
+	}
+
+	if (address == TIMA_ADDRESS)
+	{
+		//std::cout << "wrote to TIMA" << "\n";
+		timaReloadPending = false;
+
+		cancelInterrupt(TIMER);
+	}
+
 	mmu.write8(address, value);
+
 	AddCycle();
 }
 
@@ -116,8 +217,93 @@ void CPU::write16(uint16_t address, uint16_t value)
 
 void CPU::AddCycle()
 {
-	tCycles += 4;
+	
 	// TICK PPU 4X --> ppu.tick(4);
+	if (timaReloadPending)
+	{
+		uint8_t TMA = mmu.read8(TMA_ADDRESS);
+		mmu.write8(TIMA_ADDRESS, TMA);
+
+		requestInterrupt(TIMER);
+
+		timaReloadPending = false;
+	}
+	
+	for (int i = 0; i < 4; i++)
+	{
+		tCycles++;
+		DIV++;
+
+		uint8_t bitPosition;
+		uint8_t TAC = mmu.read8(TAC_ADDRESS);
+		uint8_t tacClockSelect = TAC & 3;
+
+		switch (tacClockSelect)
+		{
+			case 0x00:
+			{
+				bitPosition = 9;
+				break;
+			}
+			case 0x01:
+			{
+				bitPosition = 3;
+				break;
+			}
+			case 0x02:
+			{
+				bitPosition = 5;
+				break;
+			}
+			case 0x03:
+			{
+				bitPosition = 7;
+				break;
+			}
+		}
+
+		bool selectedDIVBit = (DIV >> bitPosition) & 1;
+
+		bool tacTimerEnableBit = (TAC >> 2) & 1;
+
+		//std::cout << std::dec << (int)TAC << "\n";
+
+		bool currentANDResult = selectedDIVBit && tacTimerEnableBit;
+
+		if (lastANDResult == 1 && currentANDResult == 0)
+		{
+			
+			uint8_t TIMA = mmu.read8(TIMA_ADDRESS);
+
+			//std::cout << "TIMA: " << std::dec << (int)TIMA << "\n";
+
+			if (TIMA == 0xFF)
+			{
+				//std::cout << "TIME RELOAD PENDING" << "\n";
+				timaReloadPending = true;
+				mmu.write8(TIMA_ADDRESS, 0x00);
+
+			}
+			else if(!timaReloadPending)
+			{
+				mmu.write8(TIMA_ADDRESS, TIMA + 1);
+			}
+		}
+		
+		lastANDResult = currentANDResult;
+
+		divCycles++;
+		
+		if (divCycles >= 256)
+		{
+			mmu.write8(DIV_ADDRESS, DIV >> 8);
+
+			//std::cout << "Full DIV: " << std::dec << (int)(DIV) << "\n";
+			//std::cout << "DIV upper 8 bits value: " << std::dec << (int)(DIV >> 8) << "\n";
+
+			divCycles = 0;
+		}
+	}
 }
 
 uint8_t CPU::fetch8()
@@ -135,7 +321,7 @@ uint16_t CPU::fetch16()
 
 void CPU::decodeAndExecute(uint8_t opcode)
 {
-	// NOT IMPLEMENTED: STOP DAA HALT DI EI RETI
+	// NOT IMPLEMENTED: STOP HALT
 
 	if (updateIME)
 	{
@@ -150,6 +336,14 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		case 0x00:
 		{
 			// NOP --> does nothing 
+			break;
+		}
+
+		// STOP
+		case 0x10:
+		{
+			std::cout << "STOP called" << "\n";
+
 			break;
 		}
 
@@ -1671,7 +1865,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// HALT
 		case 0x76:
 		{
-
+			//std::cout << "HALT CALLED" << "\n";
+			HALT = true;
 
 			break;
 		}
@@ -2124,8 +2319,5 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		}
 
 	}
-
-
-	// Check for interrupts here
 
 }

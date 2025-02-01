@@ -52,3 +52,13 @@ void GameBoy::decodeAndExecute(uint8_t opcode)
 {
     cpu.decodeAndExecute(opcode);
 }
+
+void GameBoy::handleInterrupts()
+{
+    cpu.handleInterrupts();
+}
+
+bool GameBoy::isCPUHalted()
+{
+    return cpu.HALT;
+}

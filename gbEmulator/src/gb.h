@@ -19,6 +19,9 @@ public:
 	uint8_t fetch();
 	void decodeAndExecute(uint8_t opcode);
 
+	void handleInterrupts();
+	bool isCPUHalted();
+
 	std::vector<uint8_t> fullrom;
 
 	MMU mmu;

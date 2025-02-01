@@ -61,6 +61,11 @@ void MMU::write8(uint16_t address, uint8_t value)
 		std::cout <<  (char)value;
 	}
 
+	if (address == 0xFF07)
+	{
+		std::cout << "writing to tac: " << std::dec << (int)value << "\n";
+	}
+
 	testArray[address] = value;
 
 
