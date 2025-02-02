@@ -92,39 +92,6 @@ uint8_t CPU::read8(uint16_t address)
 	return val;
 }
 
-void CPU::requestInterrupt(Interrupt type)
-{
-	uint8_t IF = mmu.read8(IF_ADDRESS);
-
-	IF = IF | (1 << type);
-
-	mmu.write8(IF_ADDRESS, IF);
-}
-
-void CPU::cancelInterrupt(Interrupt type)
-{
-	uint8_t IF = mmu.read8(IF_ADDRESS);
-
-	IF = IF & ~(1 << type);
-
-	mmu.write8(IF_ADDRESS, IF);
-}
-
-bool CPU::isInterruptRequested(Interrupt type)
-{
-	uint8_t IF = mmu.read8(IF_ADDRESS);
-
-	return (IF >> type) & 1;
-}
-
-bool CPU::isInterruptEnabled(Interrupt type)
-{
-	uint8_t IE = mmu.read8(IE_ADDRESS);
-
-	return (IE >> type) & 1;
-}
-
-
 void CPU::handleInterrupts()
 {
 	if (HALT)
@@ -143,13 +110,48 @@ void CPU::handleInterrupts()
 		return;
 	}
 
-	if (isInterruptRequested(TIMER) && isInterruptEnabled(TIMER))
+	// HALT BUG NOT IMPLEMENTED YET
+
+	// The following if statements are in order of interrupt priority
+	if (mmu.isInterruptRequested(VBLANK) && mmu.isInterruptEnabled(VBLANK))
 	{
 		// two m-cycles while nothing happens
 		AddCycle();
 		AddCycle();
 
-		cancelInterrupt(TIMER);
+		mmu.cancelInterrupt(VBLANK);
+		IME = 0;
+
+		write8(--SP, PC >> 8);
+		write8(--SP, PC & 0xFF);
+
+		PC = 0x40;
+
+		AddCycle();
+	}
+	else if (mmu.isInterruptRequested(STAT) && mmu.isInterruptEnabled(STAT))
+	{
+		// two m-cycles while nothing happens
+		AddCycle();
+		AddCycle();
+
+		mmu.cancelInterrupt(STAT);
+		IME = 0;
+
+		write8(--SP, PC >> 8);
+		write8(--SP, PC & 0xFF);
+
+		PC = 0x48;
+
+		AddCycle();
+	}
+	else if (mmu.isInterruptRequested(TIMER) && mmu.isInterruptEnabled(TIMER))
+	{
+		// two m-cycles while nothing happens
+		AddCycle();
+		AddCycle();
+
+		mmu.cancelInterrupt(TIMER);
 		IME = 0;
 
 		write8(--SP, PC >> 8);
@@ -176,7 +178,7 @@ void CPU::write8(uint16_t address, uint8_t value)
 		//std::cout << "wrote to TIMA" << "\n";
 		timaReloadPending = false;
 
-		cancelInterrupt(TIMER);
+		mmu.cancelInterrupt(TIMER);
 	}
 
 	mmu.write8(address, value);
@@ -211,7 +213,7 @@ void CPU::AddCycle()
 		uint8_t TMA = mmu.read8(TMA_ADDRESS);
 		mmu.write8(TIMA_ADDRESS, TMA);
 
-		requestInterrupt(TIMER);
+		mmu.requestInterrupt(TIMER);
 
 		timaReloadPending = false;
 	}
@@ -219,6 +221,9 @@ void CPU::AddCycle()
 	for (int i = 0; i < 4; i++)
 	{
 		tCycles++;
+
+		ppu.tick();
+
 		DIV++;
 
 		uint8_t bitPosition;

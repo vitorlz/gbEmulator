@@ -4,33 +4,7 @@
 #include "mmu.h"
 #include "ppu.h"
 
-#define B 0
-#define C 1
-#define D 2
-#define E 3
-#define H 4
-#define L 5
-#define F 6
-#define A 7
-
-#define DIV_ADDRESS 0xFF04
-#define TIMA_ADDRESS 0xFF05
-#define TMA_ADDRESS 0xFF06
-#define TAC_ADDRESS 0xFF07
-#define IF_ADDRESS 0xFF0F
-#define IE_ADDRESS 0xFFFF
-
 // cpu is going to tick the other systems.
-
-enum Interrupt
-{
-	VBLANK = 0,
-	LCD,
-	TIMER,
-	SERIAL,
-	JOYPAD
-};
-
 class CPU
 {
 public:
@@ -69,17 +43,6 @@ public:
 	uint16_t divCycles = 0; 	// 16 bit counter, only put upper 8 bits in FF04, increment every 256 t-cycle, writing to FF04 sets it to 0.
 	bool lastANDResult = 0;
 	bool timaReloadPending = 0;
-
-	// sets the corresponding bit in IF
-	void requestInterrupt(Interrupt type);
-
-	// unset the corresponding bit in IF
-	void cancelInterrupt(Interrupt type);
-
-	// return true if corresponding bit in IF is set
-	bool isInterruptRequested(Interrupt type);
-	// return true if the corresponding bit in IE is set
-	bool isInterruptEnabled(Interrupt type);
 
 	// can the corresponding interrupt handlers.
 	void handleInterrupts();

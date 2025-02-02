@@ -2,8 +2,6 @@
 #include <cinttypes>
 #include <iostream>
 
-
-
 uint8_t MMU::read8(uint16_t address)
 {
 
@@ -54,16 +52,9 @@ uint8_t MMU::read8(uint16_t address)
 
 void MMU::write8(uint16_t address, uint8_t value)
 {
-
-
 	if (address == 0xFF01)
 	{
 		std::cout <<  (char)value;
-	}
-
-	if (address == 0xFF07)
-	{
-		std::cout << "writing to tac: " << std::dec << (int)value << "\n";
 	}
 
 	testArray[address] = value;
@@ -101,5 +92,37 @@ void MMU::write8(uint16_t address, uint8_t value)
 	//{
 	//	ie[address - 0xFFFF] = value;
 	//}
+}
+
+void MMU::requestInterrupt(Interrupt type)
+{
+	uint8_t IF = read8(IF_ADDRESS);
+
+	IF = IF | (1 << type);
+
+	write8(IF_ADDRESS, IF);
+}
+
+void MMU::cancelInterrupt(Interrupt type)
+{
+	uint8_t IF = read8(IF_ADDRESS);
+
+	IF = IF & ~(1 << type);
+
+	write8(IF_ADDRESS, IF);
+}
+
+bool MMU::isInterruptRequested(Interrupt type)
+{
+	uint8_t IF = read8(IF_ADDRESS);
+
+	return (IF >> type) & 1;
+}
+
+bool MMU::isInterruptEnabled(Interrupt type)
+{
+	uint8_t IE = read8(IE_ADDRESS);
+
+	return (IE >> type) & 1;
 }
 
