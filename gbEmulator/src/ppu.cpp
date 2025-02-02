@@ -34,7 +34,9 @@ void PPU::setMode(MODE mode)
 	// set ppu mode in STAT register (bit 0 and 1)
 	uint8_t stat = mmu.read8(STAT_ADDRESS);
 
-	stat = stat | (int)mode;
+	stat = (stat & ~3) | (int)mode;
+
+	mmu.write8(STAT_ADDRESS, stat);
 }
 
 void PPU::tick()
@@ -111,8 +113,8 @@ void PPU::tick()
 			setMode(DRAWING_3);
 		}
 
-		statInterruptCheck();
 
+		statInterruptCheck();
 	}
 
 	if (scanlineCycles == 456)
