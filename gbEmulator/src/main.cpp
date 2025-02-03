@@ -53,29 +53,29 @@ int main()
     }
 
     
-    uint8_t displayBuffer[160 * 144];
+    //uint8_t displayBuffer[160 * 144];
 
-    for (int i = 0; i < (160 * 144); i++)
-    {
-        if (i % 2 == 0)
-        {   
-            /*for (int k = 0; k < 2; k++)
-            {
-                displayBuffer[(i * 2) + k] = 0x00;
-            }*/
+    //for (int i = 0; i < (160 * 144); i++)
+    //{
+    //    if (i % 2 == 0)
+    //    {   
+    //        /*for (int k = 0; k < 2; k++)
+    //        {
+    //            displayBuffer[(i * 2) + k] = 0x00;
+    //        }*/
 
-            displayBuffer[i] = 0x00;
-        }
-        else
-        {
-            /*for (int k = 0; k < 2; k++)
-            {
-                displayBuffer[(i * 2) + k] = 0xFF;
-            }*/
+    //        displayBuffer[i] = 0x00;
+    //    }
+    //    else
+    //    {
+    //        /*for (int k = 0; k < 2; k++)
+    //        {
+    //            displayBuffer[(i * 2) + k] = 0xFF;
+    //        }*/
 
-            displayBuffer[i] = 0xFF;
-        }
-    }
+    //        displayBuffer[i] = 0xFF;
+    //    }
+    //}
 
 
     std::string vertexCode;
@@ -160,7 +160,7 @@ int main()
     glGenTextures(1, &displayTexture);
     glBindTexture(GL_TEXTURE_2D, displayTexture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 160, 144, 0, GL_RED, GL_UNSIGNED_BYTE, displayBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 160, 144, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -240,7 +240,7 @@ int main()
             // fill 160x144 texture with display data and draw screen quad
             glUseProgram(shaderProgram);
             glBindTexture(GL_TEXTURE_2D, displayTexture);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RED, GL_UNSIGNED_BYTE, &gb.ppu.LCD[0]);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RED, GL_UNSIGNED_BYTE, gb.ppu.LCD);
 
             glBindVertexArray(VAO);
             glDrawArrays(GL_TRIANGLES, 0, 6);

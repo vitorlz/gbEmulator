@@ -149,7 +149,7 @@ public:
 
 	uint8_t LCD[160 * 144];
 
-	uint8_t pixelsToBeDiscarded = 0;
+	int pixelsToBeDiscarded = 0;
 
 	int LX = 0;
 
@@ -157,6 +157,10 @@ public:
 	bool wyEqualLyThisFrame = false;
 	bool resetForWindowFetch = false;
 	bool windowPixelWasDrawn = false;
+	bool calculateDiscardedPixels = true;
+
+
+	bool discardPixels = true;
 
 	int hBlankDuration = 0;
 	bool exittedDrawingMode = false;
@@ -164,7 +168,7 @@ public:
 
 	int vBlankCycleCounter = 0;
 
-	uint8_t colors[4] = { 0x00, 0x55, 0xAA, 0xFF };
+	uint8_t colors[4] =  { 0xFF, 0xAA, 0x55, 0x00 };
 
 private:
 	MMU& mmu;

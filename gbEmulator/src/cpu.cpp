@@ -131,6 +131,8 @@ void CPU::handleInterrupts()
 	}
 	else if (mmu.isInterruptRequested(STAT) && mmu.isInterruptEnabled(STAT))
 	{
+
+		std::cout << "STAT INTERRUPT BEING HANDLED" << "\n";
 		// two m-cycles while nothing happens
 		AddCycle();
 		AddCycle();
