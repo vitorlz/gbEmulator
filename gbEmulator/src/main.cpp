@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <chrono>
+#include <thread>
 
 #include "JsonTest.h"
 
@@ -166,13 +168,13 @@ int main()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;
-    gb.readRom("res/testroms/02-interrupts.gb");
+    gb.readRom("res/testroms/dmg-acid2.gb");
     
 
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    double fpsLimit = 1 / 60.0f;
+    double fpsLimit = 1 / 59.73f;
     double currentTime = 0;
     double lastFrameTime = 0;
     int frameCount = 0;
@@ -192,14 +194,16 @@ int main()
         
 
         currentTime = glfwGetTime();
-        double deltaTime = currentTime - lastFrameTime;
+        long long deltaTime = currentTime - lastFrameTime;
        
         if (!gb.isCPUHalted())
         {
             uint8_t opcode = gb.fetch();
-
+            
             //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
             gb.decodeAndExecute(opcode);
+
+
         }
         else
         {
@@ -208,28 +212,35 @@ int main()
        
         gb.handleInterrupts();
      
+
+        //std::cout << "tcycles: " << gb.cpu.tCycles << "\n";
+
         // input
         // -----
         
-        if (deltaTime >= fpsLimit)
+        if (gb.cpu.tCycles >= 70224)
         {
             processInput(window);
 
-            frameCount++;
 
-            if (frameCount >= 60)
-            {
-                //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
-                frameCount = 0;
-            }
+            //std::cout << "trying to render " << "\n";
 
+            //frameCount++;
+
+            //if (frameCount >= 60)
+            //{
+            //    //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+            //    frameCount = 0;
+            //}
+
+            
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
             // fill 160x144 texture with display data and draw screen quad
             glUseProgram(shaderProgram);
             glBindTexture(GL_TEXTURE_2D, displayTexture);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RED, GL_UNSIGNED_BYTE, displayBuffer);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RED, GL_UNSIGNED_BYTE, &gb.ppu.LCD[0]);
 
             glBindVertexArray(VAO);
             glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -238,9 +249,20 @@ int main()
             glfwSwapBuffers(window);
             glfwPollEvents();
 
+            
+        /*    if (deltaTime < fpsLimit)
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(deltaTime));
+
+                std::cout << "sleeping for " << deltaTime << " seconds" << "\n";
+            }*/
+
             lastFrameTime = currentTime;
 
-            //std::cout << "fps: " << 1 / deltaTime << "\n";
+            gb.cpu.tCycles = 0;
+
+
+            //std::cout << "fps: " << 1 / (int)deltaTime << "\n";
         }
 
         

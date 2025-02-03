@@ -222,7 +222,13 @@ void CPU::AddCycle()
 	{
 		tCycles++;
 
-		ppu.tick();
+		if (ppu.isDisplayEnabled())
+		{
+			ppu.tick();
+
+			//std::cout << "ticking ppu" << "\n";
+		}
+		
 
 		DIV++;
 

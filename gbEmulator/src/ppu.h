@@ -26,7 +26,7 @@ enum PALETTE
 struct Pixel
 {
 	// color number (ignoring the palette) --> color value from tile data
-	uint8_t color;
+	uint8_t colorNum;
 	PALETTE palette;
 	
 	// for CGB there is also a prite priority thing
@@ -57,6 +57,20 @@ struct Sprite
 
 };
 
+enum DRAWINGSTATE
+{
+	// BACKGROUND AND WINDOW
+	BG_FETCH_TILE_NUM,
+	BG_FETCH_TILE_LOW,
+	BG_FETCH_TILE_HIGH,
+	BG_PUSH_TO_FIFO,
+
+	// SPRITE
+	SP_FETCH_TILE_NUM,
+	SP_FETCH_TILE_LOW,
+	SP_FETCH_TILE_HIGH,
+	SP_PUSH_TO_FIFO
+};
 
 class PPU
 {
@@ -68,9 +82,25 @@ public:
 	void statInterruptCheck();
 
 	std::vector<Sprite> spritesBuffer;
-	int oamScanCounter = 0;
+	unsigned int oamScanCounter = 0;
 
-	MODE ppuMode;
+	unsigned int bgFetchTileNumCycles = 0;
+	unsigned int bgFetchTileLowCycles = 0;
+	unsigned int bgFetchTileHighCycles = 0;
+	unsigned int bgPushToFifoCycles = 0;
+
+	unsigned int spFetchTileNumCycles = 0;
+	unsigned int spFetchTileLowCycles = 0;
+	unsigned int spFetchTileHighCycles = 0;
+	unsigned int spPushToFifoCycles = 0;
+
+	DRAWINGSTATE drawingState = BG_FETCH_TILE_NUM;
+
+	unsigned int currentBgTileNumber;
+
+	unsigned int fetcherXPositionCounter = 0;
+
+	MODE ppuMode = OAM_SCAN_2;
 
 	std::queue<Pixel> bgPixelFIFO;
 	std::queue<Pixel> spPixelFIFO;
@@ -78,12 +108,63 @@ public:
 	void setMode(MODE mode);
 
 	bool lycEqualLy = false;
+	bool fetchingWindow = false;
 
 	bool oldStat = false;
 	bool curStat = true;
 
 	// count scanline cycles;
 	int scanlineCycles = 0;
+
+	bool isDisplayEnabled();
+	bool windowTileMapSelect();
+	bool isWindowDisplayEnabled();
+	bool tileDataSelect();
+	bool bgTileMapSelect();
+	bool spriteTallMode();
+	bool isSpriteEnabled();
+	bool bgAndWindowEnabled();
+
+	uint16_t bgFetchFirstByteAddress;
+	bool firstBgFetch = true;
+	bool spriteFound = false;
+
+	uint8_t bgFetchFirstByte;
+	uint8_t bgFetchSecondByte;
+
+	unsigned int windowLineCounter = 0;
+
+	uint8_t getSCX();
+	uint8_t getSCY();
+	uint8_t getLY();
+	uint8_t getLYC();
+	uint8_t getWY();
+	uint8_t getWX();
+	void setLY(uint8_t value);
+	bool checkLycEqualLy();
+
+	void setSTATCoincidenceFlag(bool b);
+
+	uint8_t getPixelColor(PALETTE p, uint8_t colorID);
+
+	uint8_t LCD[160 * 144];
+
+	uint8_t pixelsToBeDiscarded = 0;
+
+	int LX = 0;
+
+	bool wyEqualLy = false;
+	bool wyEqualLyThisFrame = false;
+	bool resetForWindowFetch = false;
+	bool windowPixelWasDrawn = false;
+
+	int hBlankDuration = 0;
+	bool exittedDrawingMode = false;
+	bool firstHBlankCycle = true;
+
+	int vBlankCycleCounter = 0;
+
+	uint8_t colors[4] = { 0x00, 0x55, 0xAA, 0xFF };
 
 private:
 	MMU& mmu;
