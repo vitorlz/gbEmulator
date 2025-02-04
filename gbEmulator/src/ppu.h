@@ -150,6 +150,7 @@ public:
 	uint8_t LCD[160 * 144];
 
 	int pixelsToBeDiscarded = 0;
+	int numOfPixelsDiscarded = 0;
 
 	int LX = 0;
 
@@ -158,7 +159,6 @@ public:
 	bool resetForWindowFetch = false;
 	bool windowPixelWasDrawn = false;
 	bool calculateDiscardedPixels = true;
-
 
 	bool discardPixels = true;
 

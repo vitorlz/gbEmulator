@@ -29,7 +29,7 @@ void PPU::statInterruptCheck()
 
 		if (lycEqualLy)
 		{
-			std::cout << "requesting lyc = ly" << "\n";
+			//std::cout << "requesting lyc = ly" << "\n";
 		}
 		mmu.requestInterrupt(STAT);
 	}
@@ -139,6 +139,12 @@ void PPU::tick()
 		oamScanCounter = 0;
 	}
 
+
+	if (!wyEqualLyThisFrame)
+	{
+		wyEqualLyThisFrame = getLY() == getWY();
+	}
+
 	// ----------------------------- DRAWING ---------------------------------------------------
 	if (scanlineCycles > 80 && !exittedDrawingMode && ppuMode != VBLANK_1)
 	{
@@ -150,15 +156,7 @@ void PPU::tick()
 		{
 			setMode(DRAWING_3);
 		}
-
-		wyEqualLy = getLY() == getWY();
-
-		if (wyEqualLy)
-		{
-			wyEqualLyThisFrame = true;
-		}
-		
-
+	
 		if (drawingState == BG_FETCH_TILE_NUM)
 		{
 
@@ -180,7 +178,7 @@ void PPU::tick()
 
 				currentBgTileNumber = mmu.read8(backgroundMapStart + xOffset + yOffset);
 
-				std::cout << "fetching background tile num " << "\n";
+				//std::cout << "fetching background tile num " << "\n";
 
 				drawingState = BG_FETCH_TILE_LOW;
 				bgFetchTileNumCycles = 0;
@@ -191,8 +189,9 @@ void PPU::tick()
 
 				uint16_t offset = fetcherXPositionCounter + (32 * (windowLineCounter / 8));
 
-				
-				std::cout << "fetching window tile num " << "\n"; currentBgTileNumber = mmu.read8(backgroundMapStart + offset);
+				currentBgTileNumber = mmu.read8(backgroundMapStart + offset);
+
+				//std::cout << "fetching window tile num " << "\n"; currentBgTileNumber = mmu.read8(backgroundMapStart + offset);
 
 
 				drawingState = BG_FETCH_TILE_LOW;
@@ -273,7 +272,7 @@ void PPU::tick()
 				{
 					drawingState = BG_FETCH_TILE_NUM;
 					firstBgFetch = false;
-
+					
 				}
 				else
 				{
@@ -288,7 +287,7 @@ void PPU::tick()
 			}
 
 		}
-		else if (drawingState == BG_PUSH_TO_FIFO)
+		else if (drawingState == BG_PUSH_TO_FIFO )
 		{
 
 			//std::cout << "BG_PUSH_TO_FIFO" << " SCANLINE CYCLE: " << scanlineCycles << "\n";
@@ -307,6 +306,7 @@ void PPU::tick()
 						uint8_t secondColorNumBit = (bgFetchFirstByte >> (7 - i)) & 1;
 
 						pixel.colorNum = (firstColorNumBit) << 1 | secondColorNumBit;
+						
 						pixel.palette = BGP;
 
 						//std::cout << "pushing pixel" << "\n";
@@ -330,8 +330,6 @@ void PPU::tick()
 		// --------------------------- PUSH PIXELS TO LCD -----------------------------------------
 		if (!bgPixelFIFO.empty())
 		{
-
-
 			// IF I DONT DISCARD I CAN SEE THE FOOTER BUT CANT SEE THE FACE
 			
 			// what is there are no pixels to discard? we are wasting a cycle
@@ -339,7 +337,8 @@ void PPU::tick()
 			{
 				if (calculateDiscardedPixels)
 				{
-					pixelsToBeDiscarded = (getSCX() % 8);
+					numOfPixelsDiscarded = (getSCX() % 8);
+					pixelsToBeDiscarded = numOfPixelsDiscarded;
 					calculateDiscardedPixels = false;
 				}
 
@@ -354,16 +353,17 @@ void PPU::tick()
 					bgPixelFIFO.pop();
 
 					pixelsToBeDiscarded--;
+
+					LX++;
 				}
 				else
 				{
 					discardPixels = false;
 
-
+					//std::cout << "drawing started at LX: " << LX << "\n";
 				}
+				
 				//std::cout << "pixels to be discarded after: " << std::dec << (int)pixelsToBeDiscarded << "\n";
-
-				LX++;
 			}
 			
 			if(!discardPixels)
@@ -371,27 +371,45 @@ void PPU::tick()
 				Pixel pixel = bgPixelFIFO.front();
 
 				bgPixelFIFO.pop();
-				uint8_t pixelColor = getPixelColor(pixel.palette, pixel.colorNum);
+
+				uint8_t pixelColor;
+				
+				if (bgAndWindowEnabled())
+				{
+					pixelColor = getPixelColor(pixel.palette, pixel.colorNum);
+
+				}
+				else
+				{
+					// background color number is 0 if background and window are disabled
+					pixelColor = getPixelColor(pixel.palette, 0x00);
+				}
 
 				//std::cout << "PixelColor: " << std::dec << (int)pixelColor << "\n";
 
-				//std::cout << "LX: " << std::dec << (int)LX << "LY: " << std::dec << (int)getLY() << "\n";
+				/*std::cout << "LX: " << std::dec << (int)LX << "LY: " << std::dec << (int)getLY() << "\n";
+				std::cout << "DISCARDED PIXELS: " << numOfPixelsDiscarded << "\n"*/
 
 				//std::cout << "INDEX: " << ((160 * 144) - (((getLY())) * 160) - LX) << "\n";
 
 				//std::cout << "PIXEL COLOR: " << std::dec << (int)pixelColor << "\n";
 
+				LX++;
 				
-				LCD[ (160 * 144) - ((getLY() * 160) + (160 - LX))] = pixelColor;
+
+				
+
+				
+				
+				LCD[((160 * 144) - ((getLY() * 160)  + (160 - LX))) - 1] = pixelColor;
 				//std::cout << "still rendering" << "\n";
-				
+			
 
 				if (fetchingWindow)
 				{
 					windowPixelWasDrawn = true;
 				}
 
-			
 
 				if ((isWindowDisplayEnabled() && wyEqualLyThisFrame && (LX >= (getWX() - 7))))
 				{
@@ -411,17 +429,12 @@ void PPU::tick()
 
 						resetForWindowFetch = false;
 					}
-					
-					
 				}
 				else
 				{
 					fetchingWindow = false;
 					resetForWindowFetch = true;
 				}
-
-				LX++;
-				
 			}
 
 			// DRAWING MODE ENDED
@@ -440,15 +453,13 @@ void PPU::tick()
 				spFetchTileHighCycles = 0;
 				spPushToFifoCycles = 0;
 				drawingState = BG_FETCH_TILE_NUM;
+				numOfPixelsDiscarded = 0;
 				for (int i = 0; i < bgPixelFIFO.size(); i++)
 				{
 					bgPixelFIFO.pop();
 				}
 
 				// set STAT coincidence flag
-				setSTATCoincidenceFlag(lycEqualLy);
-
-				
 				LX = 0;
 				firstBgFetch = true;
 		
@@ -456,7 +467,7 @@ void PPU::tick()
 				//hBlankDuration = 456 - scanlineCycles;
 				exittedDrawingMode = true;
 
-				std::cout << "drawing mode took this many cycles: " << scanlineCycles << "\n";
+				//std::cout << "drawing mode took this many cycles: " << scanlineCycles << "\n";
 				calculateDiscardedPixels = true;
 
 				// RESET EVERYTHING
@@ -470,13 +481,15 @@ void PPU::tick()
 	if (checkLycEqualLy())
 	{
 
-		std::cout << "LYC = LY" << "\n";
+		//std::cout << "LYC = LY" << "\n";
 
 		lycEqualLy = true;
+		setSTATCoincidenceFlag(lycEqualLy);
 	}
 	else
 	{
 		lycEqualLy = false;
+		setSTATCoincidenceFlag(lycEqualLy);
 	}
 
 	if (exittedDrawingMode && scanlineCycles < 456 && ppuMode != VBLANK_1)
@@ -501,6 +514,7 @@ void PPU::tick()
 		if (windowPixelWasDrawn)
 		{
 			windowLineCounter++;
+			windowPixelWasDrawn = false;
 		}
 
 		exittedDrawingMode = false;

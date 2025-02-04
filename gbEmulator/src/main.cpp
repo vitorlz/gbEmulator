@@ -170,7 +170,6 @@ int main()
     GameBoy gb;
     gb.readRom("res/testroms/dmg-acid2.gb");
     
-
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -181,6 +180,8 @@ int main()
 
     //JsonTest jsonTest(gb);
     //jsonTest.RunAllTests();
+
+    glfwSwapInterval(0);
 
     // render loop
     // -----------
@@ -194,7 +195,7 @@ int main()
         
 
         currentTime = glfwGetTime();
-        long long deltaTime = currentTime - lastFrameTime;
+        double deltaTime = currentTime - lastFrameTime;
        
         if (!gb.isCPUHalted())
         {
@@ -212,7 +213,6 @@ int main()
        
         gb.handleInterrupts();
      
-
         //std::cout << "tcycles: " << gb.cpu.tCycles << "\n";
 
         // input
@@ -250,19 +250,30 @@ int main()
             glfwPollEvents();
 
             
-        /*    if (deltaTime < fpsLimit)
+          //if ((currentTime - lastFrameTime) < fpsLimit)
+          //{
+          //      //std::this_thread::sleep_for(std::chrono::seconds((long long)(fpsLimit - (currentTime - lastFrameTime))));
+
+          //      //std::cout << "sleeping for " << deltaTime << " seconds" << "\n";
+          //}
+
+            static int frameCount = 0;
+
+            frameCount++;
+
+            if (frameCount >= 60)
             {
-                std::this_thread::sleep_for(std::chrono::seconds(deltaTime));
+                std::cout << "fps: " << 1 / (currentTime - lastFrameTime) << "\n";
 
-                std::cout << "sleeping for " << deltaTime << " seconds" << "\n";
-            }*/
+                frameCount = 0;
+            }
 
-            lastFrameTime = currentTime;
+           
+
+           lastFrameTime = currentTime;
 
             gb.cpu.tCycles = 0;
-
-
-            //std::cout << "fps: " << 1 / (int)deltaTime << "\n";
+           
         }
 
         
