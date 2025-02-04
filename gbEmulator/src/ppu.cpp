@@ -187,7 +187,7 @@ void PPU::tick()
 			{
 				uint16_t backgroundMapStart = windowTileMapSelect() ? 0x9C00 : 0x9800;
 
-				uint16_t offset = fetcherXPositionCounter + (32 * (windowLineCounter / 8));
+				uint16_t offset = (fetcherXPositionCounter / 8) + (32 * (windowLineCounter / 8));
 
 				currentBgTileNumber = mmu.read8(backgroundMapStart + offset);
 
@@ -451,7 +451,7 @@ void PPU::tick()
 				}
 
 
-				if ((isWindowDisplayEnabled() && wyEqualLyThisFrame && (LX >= (getWX() - 7))))
+				if ((isWindowDisplayEnabled() && wyEqualLyThisFrame && ((LX + 8) >= (getWX() - 7))))
 				{
 					//std::cout << "fetching window" << "\n";
 
@@ -571,6 +571,7 @@ void PPU::tick()
 		if (windowPixelWasDrawn)
 		{
 			windowLineCounter++;
+
 			windowPixelWasDrawn = false;
 		}
 
