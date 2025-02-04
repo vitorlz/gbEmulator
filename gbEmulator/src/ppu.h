@@ -166,6 +166,9 @@ public:
 	bool exittedDrawingMode = false;
 	bool firstHBlankCycle = true;
 
+
+	std::queue<Pixel> bgFetchBuffer;
+
 	int vBlankCycleCounter = 0;
 
 	uint8_t colors[4] =  { 0xFF, 0xAA, 0x55, 0x00 };

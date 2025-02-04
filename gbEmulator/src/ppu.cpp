@@ -172,7 +172,7 @@ void PPU::tick()
 
 				//uint16_t offset = ( ((fetcherXPositionCounter + (getSCX() / 8)) & 0x1F) & 0x3FF) + (32 * ( (getLY() + getSCY()) & 0xFF) / 8) & 0x3FF);
 
-				uint16_t xOffset = ((fetcherXPositionCounter + (getSCX() / 8)) & 0x1F) & 0x3FF;
+				uint16_t xOffset = ((((fetcherXPositionCounter + getSCX())) / 8) & 0x1F) & 0x3FF;
 
 				uint16_t yOffset = (32 * (((getLY() + getSCY()) & 0xFF) / 8)) & 0x3FF;
 
@@ -268,11 +268,35 @@ void PPU::tick()
 
 				bgFetchSecondByte = mmu.read8(bgFetchSecondByteAddress);
 
+				
+				//std::cout << "bgFetchSecondByteAddress: " << std::dec << (int)bgFetchSecondByteAddress << "\n";
+				
+
+				for (int i = 0; i < 8; i++)
+				{
+					Pixel pixel;
+
+					uint8_t firstColorNumBit = (bgFetchSecondByte >> (7 - i)) & 1;
+					uint8_t secondColorNumBit = (bgFetchFirstByte >> (7 - i)) & 1;
+
+					pixel.colorNum = (firstColorNumBit) << 1 | secondColorNumBit;
+
+					pixel.palette = BGP;
+
+					//std::cout << "pushing pixel" << "\n";
+
+					bgFetchBuffer.push(pixel);
+				}
+
+				std::cout << "LX: " << std::dec << (int)LX << "LY: " << std::dec << (int)getLY() << "\n";
+				std::cout << "bgFetchBuffer size " << bgFetchBuffer.size() << "\n";
+
+
 				if (firstBgFetch)
 				{
 					drawingState = BG_FETCH_TILE_NUM;
 					firstBgFetch = false;
-					
+
 				}
 				else
 				{
@@ -280,50 +304,91 @@ void PPU::tick()
 					drawingState = BG_PUSH_TO_FIFO;
 				}
 
-
-				//std::cout << "bgFetchSecondByteAddress: " << std::dec << (int)bgFetchSecondByteAddress << "\n";
-				
 				bgFetchTileHighCycles = 0;
+
+
 			}
 
 		}
 		else if (drawingState == BG_PUSH_TO_FIFO )
 		{
 
+
+			
+
+
 			//std::cout << "BG_PUSH_TO_FIFO" << " SCANLINE CYCLE: " << scanlineCycles << "\n";
 
 			bgPushToFifoCycles++;
+
+
 
 			if (bgPushToFifoCycles >= 2)
 			{
 				if (bgPixelFIFO.empty())
 				{
+					
+
 					for (int i = 0; i < 8; i++)
 					{
-						Pixel pixel;
+					
+						bgPixelFIFO.push(bgFetchBuffer.front());
+						bgFetchBuffer.pop();
 
-						uint8_t firstColorNumBit = (bgFetchSecondByte >> (7 - i)) & 1;
-						uint8_t secondColorNumBit = (bgFetchFirstByte >> (7 - i)) & 1;
-
-						pixel.colorNum = (firstColorNumBit) << 1 | secondColorNumBit;
-						
-						pixel.palette = BGP;
-
-						//std::cout << "pushing pixel" << "\n";
-
-						bgPixelFIFO.push(pixel);
+						fetcherXPositionCounter++;
 					}
 
 					bgPushToFifoCycles = 0;
 					drawingState = BG_FETCH_TILE_NUM;
-					fetcherXPositionCounter++;
-
 					
 				}
+
+
+
 			}
 			// Don't forget to leave the BG_PUSH_TO_FIFO state
 		}
 		
+
+		if (discardPixels && !bgFetchBuffer.empty())
+		{
+			if (calculateDiscardedPixels)
+			{
+				numOfPixelsDiscarded = (getSCX() % 8);
+				pixelsToBeDiscarded = numOfPixelsDiscarded;
+				calculateDiscardedPixels = false;
+			}
+
+
+			
+			std::cout << "NUM OF PIXELS DISCARDED: " << numOfPixelsDiscarded << "\n";
+
+			/*std::cout << "SCX: " << std::dec << (int)getSCX() << "\n";
+			std::cout << "pixels to be discarded before: " << std::dec << (int)pixelsToBeDiscarded << "\n";
+			std::cout << "mod: " << std::dec << (int)(getSCX() % 8) << "\n";*/
+
+
+			if (pixelsToBeDiscarded > 0)
+			{
+				bgFetchBuffer.pop();
+
+				std::cout << "discarded from fetch buffer: " << bgFetchBuffer.size() << "\n";
+
+
+				pixelsToBeDiscarded--;
+
+				//LX++;
+			}
+			else
+			{
+				discardPixels = false;
+
+				//std::cout << "drawing started at LX: " << LX << "\n";
+			}
+
+			//std::cout << "pixels to be discarded after: " << std::dec << (int)pixelsToBeDiscarded << "\n";
+		}
+
 
 		//std::cout << "!bgPixelFIFO.empty(): " << bgPixelFIFO.empty() << "\n";
 
@@ -333,38 +398,7 @@ void PPU::tick()
 			// IF I DONT DISCARD I CAN SEE THE FOOTER BUT CANT SEE THE FACE
 			
 			// what is there are no pixels to discard? we are wasting a cycle
-			if (discardPixels)
-			{
-				if (calculateDiscardedPixels)
-				{
-					numOfPixelsDiscarded = (getSCX() % 8);
-					pixelsToBeDiscarded = numOfPixelsDiscarded;
-					calculateDiscardedPixels = false;
-				}
-
-
-				/*std::cout << "SCX: " << std::dec << (int)getSCX() << "\n";
-				std::cout << "pixels to be discarded before: " << std::dec << (int)pixelsToBeDiscarded << "\n";
-				std::cout << "mod: " << std::dec << (int)(getSCX() % 8) << "\n";*/
-
-
-				if (pixelsToBeDiscarded > 0)
-				{
-					bgPixelFIFO.pop();
-
-					pixelsToBeDiscarded--;
-
-					LX++;
-				}
-				else
-				{
-					discardPixels = false;
-
-					//std::cout << "drawing started at LX: " << LX << "\n";
-				}
-				
-				//std::cout << "pixels to be discarded after: " << std::dec << (int)pixelsToBeDiscarded << "\n";
-			}
+			
 			
 			if(!discardPixels)
 			{
@@ -374,34 +408,40 @@ void PPU::tick()
 
 				uint8_t pixelColor;
 				
-				if (bgAndWindowEnabled())
-				{
-					pixelColor = getPixelColor(pixel.palette, pixel.colorNum);
-
-				}
-				else
-				{
-					// background color number is 0 if background and window are disabled
-					pixelColor = getPixelColor(pixel.palette, 0x00);
-				}
-
-				//std::cout << "PixelColor: " << std::dec << (int)pixelColor << "\n";
-
-				/*std::cout << "LX: " << std::dec << (int)LX << "LY: " << std::dec << (int)getLY() << "\n";
-				std::cout << "DISCARDED PIXELS: " << numOfPixelsDiscarded << "\n"*/
-
-				//std::cout << "INDEX: " << ((160 * 144) - (((getLY())) * 160) - LX) << "\n";
-
-				//std::cout << "PIXEL COLOR: " << std::dec << (int)pixelColor << "\n";
-
 				LX++;
+
+				if (LX > 8)
+				{
+					if (bgAndWindowEnabled())
+					{
+						pixelColor = getPixelColor(pixel.palette, pixel.colorNum);
+
+					}
+					else
+					{
+						// background color number is 0 if background and window are disabled
+						pixelColor = getPixelColor(pixel.palette, 0x00);
+					}
+
+					//std::cout << "PixelColor: " << std::dec << (int)pixelColor << "\n";
+
+					/*
+					std::cout << "DISCARDED PIXELS: " << numOfPixelsDiscarded << "\n"*/
+
+					//std::cout << "INDEX: " << ((160 * 144) - (((getLY())) * 160) - LX) << "\n";
+
+					//std::cout << "PIXEL COLOR: " << std::dec << (int)pixelColor << "\n";
+
+				
+				
+					
+
+					LCD[((160 * 144) - ((getLY() * 160)  + (160 - (LX - 8)))) - 1] = pixelColor;
+				}
 				
 
 				
 
-				
-				
-				LCD[((160 * 144) - ((getLY() * 160)  + (160 - LX))) - 1] = pixelColor;
 				//std::cout << "still rendering" << "\n";
 			
 
@@ -430,7 +470,7 @@ void PPU::tick()
 						resetForWindowFetch = false;
 					}
 				}
-				else
+				else 
 				{
 					fetchingWindow = false;
 					resetForWindowFetch = true;
@@ -438,7 +478,7 @@ void PPU::tick()
 			}
 
 			// DRAWING MODE ENDED
-			if (LX == 160)
+			if (LX == 160 + 8)
 			{
 				fetcherXPositionCounter = 0;
 				fetchingWindow = false;
@@ -454,10 +494,27 @@ void PPU::tick()
 				spPushToFifoCycles = 0;
 				drawingState = BG_FETCH_TILE_NUM;
 				numOfPixelsDiscarded = 0;
+				
+
+				std::cout << "clearing fifo size before: " << bgPixelFIFO.size() << "\n";
+
 				for (int i = 0; i < bgPixelFIFO.size(); i++)
 				{
 					bgPixelFIFO.pop();
 				}
+
+				std::cout << "clearing fifo size after: " << bgPixelFIFO.size() << "\n";
+
+				std::cout << "clearing fetch buffer size before: " << bgFetchBuffer.size() << "\n";
+
+				while(!bgFetchBuffer.empty())
+				{
+					
+					bgFetchBuffer.pop();
+					
+				}
+
+				std::cout << "clearing fetch buffer size after: " << bgFetchBuffer.size() << "\n";
 
 				// set STAT coincidence flag
 				LX = 0;

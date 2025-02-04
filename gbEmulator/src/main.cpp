@@ -240,7 +240,7 @@ int main()
             // fill 160x144 texture with display data and draw screen quad
             glUseProgram(shaderProgram);
             glBindTexture(GL_TEXTURE_2D, displayTexture);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RED, GL_UNSIGNED_BYTE, gb.ppu.LCD);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RED, GL_UNSIGNED_BYTE, &gb.ppu.LCD[0]);
 
             glBindVertexArray(VAO);
             glDrawArrays(GL_TRIANGLES, 0, 6);
