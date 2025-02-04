@@ -224,14 +224,12 @@ void CPU::AddCycle()
 	{
 		tCycles++;
 
-		if (ppu.isDisplayEnabled())
+		// was doing ppu.isDisplayEnabled() in the if statement before, this was causing issues with DR. Mario.
+		if (true)
 		{
 			ppu.tick();
-
-			//std::cout << "ticking ppu" << "\n";
 		}
 		
-
 		DIV++;
 
 		uint8_t bitPosition;
@@ -266,16 +264,11 @@ void CPU::AddCycle()
 
 		bool tacTimerEnableBit = (TAC >> 2) & 1;
 
-		//std::cout << std::dec << (int)TAC << "\n";
-
 		bool currentANDResult = selectedDIVBit && tacTimerEnableBit;
 
 		if (lastANDResult == 1 && currentANDResult == 0)
 		{
-			
 			uint8_t TIMA = mmu.read8(TIMA_ADDRESS);
-
-			//std::cout << "TIMA: " << std::dec << (int)TIMA << "\n";
 
 			if (TIMA == 0xFF)
 			{

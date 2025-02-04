@@ -52,32 +52,6 @@ int main()
         return -1;
     }
 
-    
-    //uint8_t displayBuffer[160 * 144];
-
-    //for (int i = 0; i < (160 * 144); i++)
-    //{
-    //    if (i % 2 == 0)
-    //    {   
-    //        /*for (int k = 0; k < 2; k++)
-    //        {
-    //            displayBuffer[(i * 2) + k] = 0x00;
-    //        }*/
-
-    //        displayBuffer[i] = 0x00;
-    //    }
-    //    else
-    //    {
-    //        /*for (int k = 0; k < 2; k++)
-    //        {
-    //            displayBuffer[(i * 2) + k] = 0xFF;
-    //        }*/
-
-    //        displayBuffer[i] = 0xFF;
-    //    }
-    //}
-
-
     std::string vertexCode;
     std::string fragmentCode;
     std::ifstream vShaderFile;
@@ -168,10 +142,7 @@ int main()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;
-    gb.readRom("res/testroms/dmg-acid2.gb");
-    
-    // uncomment this call to draw in wireframe polygons.
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    gb.readRom("res/testroms/drmario.gb");
 
     double fpsLimit = 1 / 59.73f;
     double currentTime = 0;
@@ -201,7 +172,7 @@ int main()
         {
             uint8_t opcode = gb.fetch();
             
-            //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+           // std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
             gb.decodeAndExecute(opcode);
 
 
@@ -222,18 +193,6 @@ int main()
         {
             processInput(window);
 
-
-            //std::cout << "trying to render " << "\n";
-
-            //frameCount++;
-
-            //if (frameCount >= 60)
-            //{
-            //    //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
-            //    frameCount = 0;
-            //}
-
-            
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 

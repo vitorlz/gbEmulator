@@ -35,7 +35,7 @@ void GameBoy::readRom(const std::string rom)
         {
             //mmu.rom[i] = fullrom[i];
 
-            mmu.testArray[i] = fullrom[i];
+            mmu.writeToRom(i, fullrom[i]);
         }
         
         is.close();
