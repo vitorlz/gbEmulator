@@ -141,8 +141,8 @@ int main()
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    GameBoy gb;
-    gb.readRom("res/testroms/drmario.gb");
+    GameBoy gb;   
+    gb.readRom("res/testroms/dmg-acid2.gb");
 
     double fpsLimit = 1 / 59.73f;
     double currentTime = 0;

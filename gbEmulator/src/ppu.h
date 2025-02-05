@@ -50,7 +50,9 @@ struct Sprite
 
 	uint8_t yPos; // byte 0
 	uint8_t xPos; // byte 1
-	uint8_t tileNum; // byte 2
+	unsigned int tileNum; // byte 2
+
+	uint8_t height;
 
 	// byte 3
 	SpriteFlags flags;
@@ -68,8 +70,8 @@ enum DRAWINGSTATE
 	// SPRITE
 	SP_FETCH_TILE_NUM,
 	SP_FETCH_TILE_LOW,
-	SP_FETCH_TILE_HIGH,
-	SP_PUSH_TO_FIFO
+	SP_FETCH_TILE_HIGH_AND_PUSH,
+	
 };
 
 class PPU
@@ -94,7 +96,8 @@ public:
 	unsigned int spFetchTileHighCycles = 0;
 	unsigned int spPushToFifoCycles = 0;
 
-	DRAWINGSTATE drawingState = BG_FETCH_TILE_NUM;
+	DRAWINGSTATE bgDrawingState = BG_FETCH_TILE_NUM;
+	DRAWINGSTATE spDrawingState = SP_FETCH_TILE_NUM;
 
 	unsigned int currentBgTileNumber;
 
@@ -105,6 +108,12 @@ public:
 	std::queue<Pixel> bgPixelFIFO;
 	std::queue<Pixel> spPixelFIFO;
 
+
+	Sprite spriteBeingFetched;
+	uint16_t spFetchFirstByteAddress;
+	uint8_t spFetchFirstByte;
+	uint8_t spFetchSecondByte;
+
 	void setMode(MODE mode);
 
 	bool lycEqualLy = false;
@@ -112,6 +121,8 @@ public:
 
 	bool oldStat = false;
 	bool curStat = true;
+
+	bool lastSpriteTall = false;
 
 	// count scanline cycles;
 	int scanlineCycles = 0;
@@ -160,12 +171,14 @@ public:
 	bool windowPixelWasDrawn = false;
 	bool calculateDiscardedPixels = true;
 
+	bool spriteFetchEnabled = false;
+
 	bool discardPixels = true;
 
 	int hBlankDuration = 0;
 	bool exittedDrawingMode = false;
 	bool firstHBlankCycle = true;
-
+	unsigned int currentSpTileNumber;
 
 	std::queue<Pixel> bgFetchBuffer;
 

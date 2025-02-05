@@ -26,11 +26,6 @@ void PPU::statInterruptCheck()
 
 	if (curStat && !oldStat)
 	{
-
-		if (lycEqualLy)
-		{
-			std::cout << "requesting lyc = ly" << "\n";
-		}
 		mmu.requestInterrupt(STAT);
 	}
 
@@ -58,9 +53,7 @@ void PPU::tick()
 	{
 		if (getLY() == 153)
 		{
-			
-			setMode(OAM_SCAN_2);
-			
+			setMode(OAM_SCAN_2);	
 			setLY(0);
 		}
 		windowLineCounter = 0;
@@ -79,6 +72,7 @@ void PPU::tick()
 		if (scanlineCycles == 1)
 		{
 			setMode(OAM_SCAN_2);
+			/*std::cout << "OAM SCAN START" << "\n";*/
 		}
 
 		// oam scan --> check a new oam entry every 2 t-cycles
@@ -88,7 +82,10 @@ void PPU::tick()
 			std::vector<uint8_t> oamByteBuffer;
 			// each sprite is 4 bytes --> read a sprite from oam
 			for (int i = 0; i < 4; i++)
-			{
+			{/*
+				std::cout << "OAM SCAN COUNTER: " << oamScanCounter << "\n";
+				std::cout << "OAM BUFFER READING FROM: " << OAM_START_ADDRESS + (oamScanCounter * 4 + i) << "\n";
+				std::cout << "OAM BYTE BUFFER SIZE: " << oamByteBuffer.size() << "\n";*/
 				oamByteBuffer.push_back(mmu.read8(OAM_START_ADDRESS + (oamScanCounter * 4 + i)));
 			}
 
@@ -96,6 +93,8 @@ void PPU::tick()
 			uint8_t yPos = oamByteBuffer[0];
 			uint8_t xPos = oamByteBuffer[1];
 			uint8_t tileNum = oamByteBuffer[2];
+			
+
 			uint8_t flags = oamByteBuffer[3];
 
 			bool tallMode = spriteTallMode();
@@ -104,9 +103,10 @@ void PPU::tick()
 
 			// Check conditions and add sprite to spriteBuffer if all conditions pass:
 
-			// x pos greater than 0:
-			
-			if (xPos > 0    &&    (currentLY + 16) >= yPos    &&   (currentLY + 16) < (yPos + spriteHeight)    &&    spritesBuffer.size() < 10)
+			// if hit a sprite, add to buffer
+		
+
+			if (xPos >= 0    &&    (currentLY + 16) >= yPos    &&   (currentLY + 16) < (yPos + spriteHeight)    &&    spritesBuffer.size() < 10)
 			{
 				Sprite sprite;
 				SpriteFlags spriteFlags;
@@ -114,6 +114,7 @@ void PPU::tick()
 				sprite.yPos = yPos;
 				sprite.xPos = xPos;
 				sprite.tileNum = tileNum;
+				sprite.height = spriteHeight;
 				
 				spriteFlags.prio = (flags>> 7) & 1;
 				spriteFlags.yFlip = (flags >> 6) & 1;
@@ -125,12 +126,12 @@ void PPU::tick()
 				spritesBuffer.push_back(sprite);
 			}
 
-			oamScanCounter++;
+			oamScanCounter++;			
 		}
 	}
 	else
 	{
-		spritesBuffer.clear();
+		//spritesBuffer.clear();
 		oamScanCounter = 0;
 	}
 
@@ -154,7 +155,7 @@ void PPU::tick()
 			firstBgFetch = false;
 		}
 
-		if (drawingState == BG_FETCH_TILE_NUM)
+		if (bgDrawingState == BG_FETCH_TILE_NUM)
 		{
 			bgFetchTileNumCycles++;
 
@@ -169,7 +170,7 @@ void PPU::tick()
 
 				currentBgTileNumber = mmu.read8(backgroundMapStart + xOffset + yOffset);
 
-				drawingState = BG_FETCH_TILE_LOW;
+				bgDrawingState = BG_FETCH_TILE_LOW;
 				bgFetchTileNumCycles = 0;
 			}	
 			else if (fetchingWindow && bgFetchTileNumCycles >= 2)
@@ -180,11 +181,11 @@ void PPU::tick()
 
 				currentBgTileNumber = mmu.read8(backgroundMapStart + offset);
 
-				drawingState = BG_FETCH_TILE_LOW;
+				bgDrawingState = BG_FETCH_TILE_LOW;
 				bgFetchTileNumCycles = 0;
 			}
 		}
-		else if (drawingState == BG_FETCH_TILE_LOW)
+		else if (bgDrawingState == BG_FETCH_TILE_LOW)
 		{
 			bgFetchTileLowCycles++;
 
@@ -215,18 +216,16 @@ void PPU::tick()
 					offset = 2 * (windowLineCounter % 8);
 				}
 				
-
 				bgFetchFirstByteAddress += offset;
-
 
 				bgFetchFirstByte = mmu.read8(bgFetchFirstByteAddress);
 
-				drawingState = BG_FETCH_TILE_HIGH;
+				bgDrawingState = BG_FETCH_TILE_HIGH;
 				bgFetchTileLowCycles = 0;
 			}
 
 		}
-		else if (drawingState == BG_FETCH_TILE_HIGH)
+		else if (bgDrawingState == BG_FETCH_TILE_HIGH)
 		{
 			bgFetchTileHighCycles++;
 
@@ -257,13 +256,13 @@ void PPU::tick()
 				// again at the same fetcherXPositionCounter and discard 8 more pixels. After that, run normally.
 				if (firstBgFetch)
 				{
-					drawingState = BG_FETCH_TILE_NUM;
+					bgDrawingState = BG_FETCH_TILE_NUM;
 					
 				}
 				else
 				{
 
-					drawingState = BG_PUSH_TO_FIFO;
+					bgDrawingState = BG_PUSH_TO_FIFO;
 				}
 
 				bgFetchTileHighCycles = 0;
@@ -272,14 +271,14 @@ void PPU::tick()
 			}
 
 		}
-		else if (drawingState == BG_PUSH_TO_FIFO )
+		else if (bgDrawingState == BG_PUSH_TO_FIFO )
 		{
 
 			bgPushToFifoCycles++;
 
 			if (bgPushToFifoCycles >= 2)
 			{
-				if (bgPixelFIFO.empty())
+				if (bgPixelFIFO.empty() && !spriteFetchEnabled)
 				{
 					
 
@@ -293,17 +292,162 @@ void PPU::tick()
 					}
 
 					bgPushToFifoCycles = 0;
-					drawingState = BG_FETCH_TILE_NUM;
+					bgDrawingState = BG_FETCH_TILE_NUM;
 					
 				}
-
-
-
 			}
 			// Don't forget to leave the BG_PUSH_TO_FIFO state
 		}
+
+		// CHECK IF REACHED A SPRITE 
+		if (!spriteFetchEnabled)
+		{
+			//std::cout << "inside if" << "\n";
+			for (int i = 0; i < spritesBuffer.size(); i++)
+			{
+
+				Sprite sprite = spritesBuffer[i];
+				if (sprite.xPos == (LX))
+				{
+
+					 
+
+				
+
+					spriteBeingFetched = sprite;
+					spriteFetchEnabled = true;
+
+					// remove sprite from buffer
+					spritesBuffer.erase(spritesBuffer.begin() + i);
+
+		
+					//std::cout << "sprite found" << "\n
+				}
+
+
+			}
+		}
 		
 
+		// maybe also use drawingState == bgpushtofifo as a condition because that would mean that the background fetcher is waiting for 
+		// the sprite fetcher, otherwise there is the possibility that we are going to fetch both background and sprite at the same time,
+		// which is not what we want.
+		if (spriteFetchEnabled)
+		{
+			if (spDrawingState == SP_FETCH_TILE_NUM)
+			{
+				spFetchTileNumCycles++;
+
+				if (spFetchTileNumCycles >= 2)
+				{
+					currentSpTileNumber = spriteBeingFetched.tileNum;
+				
+
+					spFetchTileNumCycles = 0;
+					spDrawingState = SP_FETCH_TILE_LOW;
+				}	
+			}
+			else if (spDrawingState == SP_FETCH_TILE_LOW)
+			{
+				spFetchTileLowCycles++;
+
+				if (spFetchTileLowCycles >= 2)
+				{	
+					int offset = 2 * (((getLY()+16) - spriteBeingFetched.yPos ) % spriteBeingFetched.height);
+
+					if (spriteTallMode())
+					{
+						currentSpTileNumber = currentSpTileNumber & 0xFE;
+					}
+
+					if (spriteBeingFetched.flags.yFlip)
+					{
+						offset = (((spriteTallMode() == 1 ? 16 : 8) - 1) * 2) - offset;
+					}
+					
+
+					spFetchFirstByteAddress = 0x8000 + (currentSpTileNumber * 16) + offset;
+					
+					//std::cout << "Current SP Tile Number: " << currentSpTileNumber << "\n";
+				
+					spFetchFirstByte = mmu.read8(spFetchFirstByteAddress );
+
+					spFetchTileLowCycles = 0;
+					spDrawingState = SP_FETCH_TILE_HIGH_AND_PUSH;
+				}
+			}
+			else if (spDrawingState == SP_FETCH_TILE_HIGH_AND_PUSH)
+			{
+				spFetchTileHighCycles++;
+
+				if (spFetchTileHighCycles >= 2)
+				{
+
+					uint16_t spFetchSecondByteAddress = spFetchFirstByteAddress + 1;
+					spFetchSecondByte = mmu.read8(spFetchSecondByteAddress);
+
+				/*	std::cout << "first byte address: " << std::dec << (int)spFetchFirstByteAddress << "\n";
+
+					std::cout << "second byte address: " << std::dec << (int)spFetchSecondByteAddress << "\n";*/
+
+					int spFIFOSizeBeforePush = spPixelFIFO.size();
+
+					for (int i = 0; i < 8; i++)
+					{
+
+						if (true)
+						{
+							Pixel pixel;
+
+							unsigned int bitOffset;
+
+							if (spriteBeingFetched.flags.xFlip)
+							{
+								bitOffset = i;
+							}
+							else
+							{
+								bitOffset = 7 - i;
+							}
+
+						
+							
+							uint8_t firstColorNumBit = (spFetchSecondByte >> bitOffset) & 1;
+							uint8_t secondColorNumBit = (spFetchFirstByte >> bitOffset) & 1;
+
+							pixel.colorNum = (firstColorNumBit) << 1 | secondColorNumBit;
+
+							pixel.palette = spriteBeingFetched.flags.palette ? OBP1 : OBP0;
+							pixel.backgroundPrio = spriteBeingFetched.flags.prio;
+
+
+							/*std::cout << "PUSHING SPRITE PIXEL TO FIFO" << "\n";
+							std::cout << "Sprite prio: " << spriteBeingFetched.flags.prio << "\n";
+							std::cout << "Sprite palette: " << (int)spriteBeingFetched.flags.palette << "\n";*/
+
+							if (spPixelFIFO.size() < 8 && i >= spFIFOSizeBeforePush )
+							{
+					
+								spPixelFIFO.push(pixel);
+							}
+							
+						}
+						
+					}
+
+					spFetchTileHighCycles = 0;
+					spDrawingState = SP_FETCH_TILE_NUM;
+					spriteFetchEnabled = false;
+
+				}
+			}
+			
+			
+		}
+		
+
+
+		// discard scx%8 pixels from first fetch
 		if (discardPixels && !firstBgFetch)
 		{
 			if (calculateDiscardedPixels)
@@ -329,12 +473,12 @@ void PPU::tick()
 		// --------------------------- PUSH PIXELS TO LCD -----------------------------------------
 		if (!bgPixelFIFO.empty())
 		{	
-			if(!discardPixels)
+			if(!discardPixels && !spriteFetchEnabled)
 			{
-				Pixel pixel = bgPixelFIFO.front();
+				Pixel bgPixel = bgPixelFIFO.front();
 
 				bgPixelFIFO.pop();
-
+				
 				uint8_t pixelColor;
 				
 			
@@ -344,14 +488,36 @@ void PPU::tick()
 				{
 					if (bgAndWindowEnabled())
 					{
-						pixelColor = getPixelColor(pixel.palette, pixel.colorNum);
-
+						pixelColor = getPixelColor(bgPixel.palette, bgPixel.colorNum);
 					}
 					else
 					{
 						// background color number is 0 if background and window are disabled
-						pixelColor = getPixelColor(pixel.palette, 0x00);
+						pixelColor = getPixelColor(bgPixel.palette, 0x00);
 					}
+
+					if (isSpriteEnabled() && !spPixelFIFO.empty())
+					{
+						Pixel spPixel = spPixelFIFO.front();
+
+						spPixelFIFO.pop();
+
+
+						if (spPixel.colorNum != 0 && !(spPixel.backgroundPrio == 1 && bgPixel.colorNum != 0))
+						{
+							pixelColor = getPixelColor(spPixel.palette, spPixel.colorNum);
+
+
+							/*std::cout << "rendering sprite pixel! " << "\n";
+							std::cout << "LX: " << std::dec << (int)LX << "LY: " << std::dec << (int)getLY() << "\n";
+							std::cout << "sprite fifo size: " << spPixelFIFO.size() << "\n";
+							std::cout << "sprite buffer size: " << spritesBuffer.size() << "\n";*/
+						}
+
+
+					}
+
+				
 
 					LCD[((160 * 144) - ((getLY() * 160)  + (160 - (LX - 8))))] = pixelColor;
 				}
@@ -371,7 +537,7 @@ void PPU::tick()
 					if (resetForWindowFetch)
 					{
 						fetcherXPositionCounter = 0;
-						drawingState = BG_FETCH_TILE_NUM;
+						bgDrawingState = BG_FETCH_TILE_NUM;
 
 						for (int i = 0; i < bgPixelFIFO.size(); i++)
 						{
@@ -403,7 +569,7 @@ void PPU::tick()
 				spFetchTileLowCycles = 0;
 				spFetchTileHighCycles = 0;
 				spPushToFifoCycles = 0;
-				drawingState = BG_FETCH_TILE_NUM;
+				bgDrawingState = BG_FETCH_TILE_NUM;
 				numOfPixelsDiscarded = 0;
 
 				for (int i = 0; i < bgPixelFIFO.size(); i++)
@@ -418,11 +584,21 @@ void PPU::tick()
 					
 				}
 
+				while (!spPixelFIFO.empty())
+				{
+
+					spPixelFIFO.pop();
+
+				}
+
+				spritesBuffer.clear();
+
 				LX = 0;
 				firstBgFetch = true;
 				discardPixels = true;
 				exittedDrawingMode = true;
 				calculateDiscardedPixels = true;
+				spriteFetchEnabled = false;
 			}
 		}
 	}
@@ -449,6 +625,7 @@ void PPU::tick()
 			windowPixelWasDrawn = false;
 		}
 
+		
 		exittedDrawingMode = false;
 		firstHBlankCycle = true;
 		scanlineCycles = 0;
@@ -544,17 +721,17 @@ uint8_t PPU::getPixelColor(PALETTE p, uint8_t colorID)
 	}
 	else if (p == OBP0)
 	{
-		uint8_t bgp = mmu.read8(0xFF48);
+		uint8_t obp0 = mmu.read8(0xFF48);
 
-		uint8_t grayShade = (bgp >> (2 * colorID)) & 3;
+		uint8_t grayShade = (obp0 >> (2 * colorID)) & 3;
 
 		return colors[grayShade];
 	}
 	else if (p == OBP1)
 	{
-		uint8_t bgp = mmu.read8(0xFF49);
+		uint8_t obp1 = mmu.read8(0xFF49);
 
-		uint8_t grayShade = (bgp >> (2 * colorID)) & 3;
+		uint8_t grayShade = (obp1 >> (2 * colorID)) & 3;
 
 		return colors[grayShade];
 	}
