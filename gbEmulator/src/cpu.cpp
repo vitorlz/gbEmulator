@@ -86,7 +86,18 @@ bool CPU::getFlagC()
 
 uint8_t CPU::read8(uint16_t address)
 {
-	uint8_t val = mmu.read8(address);
+
+	uint8_t val;
+
+	if (mmu.dmaTransferRequested && (address < 0xFF80 || address >  0xFFFE))
+	{
+		val = 0xFF;
+	}
+	else
+	{
+		val = mmu.read8(address);
+	}
+	
 	AddCycle();
 
 	return val;
@@ -168,7 +179,7 @@ void CPU::handleInterrupts()
 
 void CPU::write8(uint16_t address, uint8_t value)
 {
-	
+
 	if (address == DIV_ADDRESS)
 	{
 		value = 0x00;
@@ -183,9 +194,18 @@ void CPU::write8(uint16_t address, uint8_t value)
 		mmu.cancelInterrupt(TIMER);
 	}
 
-	mmu.write8(address, value);
 
-	AddCycle();
+	if (mmu.dmaTransferRequested && (address < 0xFF80 || address >  0xFFFE))
+	{
+		AddCycle();
+		return;
+	}
+	else
+	{
+		
+		mmu.write8(address, value);
+		AddCycle();
+	}
 }
 
 
@@ -208,6 +228,30 @@ void CPU::write16(uint16_t address, uint16_t value)
 
 void CPU::AddCycle()
 {
+
+
+	if (mmu.dmaTransferRequested)
+	{
+
+		/*std::cout << "dma transfer requested! " << "\n";
+		std::cout << "dma delay: " << mmu.dmaDelay << "\n";*/
+
+		if (mmu.dmaDelay >= 1 && mmu.dmaDelay < 161)
+		{
+			mmu.dmaTransfer(mmu.dmaDelay);
+		}
+
+		
+		if (mmu.dmaDelay == 161)
+		{
+			mmu.dmaTransferRequested = false;
+			mmu.dmaDelay = 0;
+		}
+		else
+		{
+			mmu.dmaDelay++;
+		}
+	}
 	
 	// TICK PPU 4X --> ppu.tick(4);
 	if (timaReloadPending)
@@ -592,8 +636,6 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			break;
 		}
 
-
-		
 		// LD r8, r8
 		case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x47: 
 		case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4F:

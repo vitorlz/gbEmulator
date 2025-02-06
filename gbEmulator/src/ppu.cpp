@@ -71,9 +71,11 @@ void PPU::tick()
 
 		if (scanlineCycles == 1)
 		{
-			setMode(OAM_SCAN_2);
+			//setMode(OAM_SCAN_2);
 			/*std::cout << "OAM SCAN START" << "\n";*/
 		}
+
+		
 
 		// oam scan --> check a new oam entry every 2 t-cycles
 		if (scanlineCycles % 2 == 0)
@@ -131,7 +133,6 @@ void PPU::tick()
 	}
 	else
 	{
-		//spritesBuffer.clear();
 		oamScanCounter = 0;
 	}
 
@@ -257,16 +258,13 @@ void PPU::tick()
 				if (firstBgFetch)
 				{
 					bgDrawingState = BG_FETCH_TILE_NUM;
-					
 				}
 				else
 				{
-
 					bgDrawingState = BG_PUSH_TO_FIFO;
 				}
 
 				bgFetchTileHighCycles = 0;
-
 
 			}
 
@@ -302,29 +300,19 @@ void PPU::tick()
 		// CHECK IF REACHED A SPRITE 
 		if (!spriteFetchEnabled)
 		{
-			//std::cout << "inside if" << "\n";
 			for (int i = 0; i < spritesBuffer.size(); i++)
 			{
-
 				Sprite sprite = spritesBuffer[i];
-				if (sprite.xPos == (LX))
+				if (sprite.xPos == LX)
 				{
-
-					 
-
-				
-
 					spriteBeingFetched = sprite;
-					spriteFetchEnabled = true;
+					spriteFetchEnabled = true;		
 
 					// remove sprite from buffer
 					spritesBuffer.erase(spritesBuffer.begin() + i);
-
 		
 					//std::cout << "sprite found" << "\n
 				}
-
-
 			}
 		}
 		
@@ -391,48 +379,51 @@ void PPU::tick()
 					std::cout << "second byte address: " << std::dec << (int)spFetchSecondByteAddress << "\n";*/
 
 					int spFIFOSizeBeforePush = spPixelFIFO.size();
-
+					
 					for (int i = 0; i < 8; i++)
 					{
+						Pixel pixel;
 
-						if (true)
+						unsigned int bitOffset;
+
+						if (spriteBeingFetched.flags.xFlip)
 						{
-							Pixel pixel;
-
-							unsigned int bitOffset;
-
-							if (spriteBeingFetched.flags.xFlip)
-							{
-								bitOffset = i;
-							}
-							else
-							{
-								bitOffset = 7 - i;
-							}
-
-						
-							
-							uint8_t firstColorNumBit = (spFetchSecondByte >> bitOffset) & 1;
-							uint8_t secondColorNumBit = (spFetchFirstByte >> bitOffset) & 1;
-
-							pixel.colorNum = (firstColorNumBit) << 1 | secondColorNumBit;
-
-							pixel.palette = spriteBeingFetched.flags.palette ? OBP1 : OBP0;
-							pixel.backgroundPrio = spriteBeingFetched.flags.prio;
-
-
-							/*std::cout << "PUSHING SPRITE PIXEL TO FIFO" << "\n";
-							std::cout << "Sprite prio: " << spriteBeingFetched.flags.prio << "\n";
-							std::cout << "Sprite palette: " << (int)spriteBeingFetched.flags.palette << "\n";*/
-
-							if (spPixelFIFO.size() < 8 && i >= spFIFOSizeBeforePush )
-							{
-					
-								spPixelFIFO.push(pixel);
-							}
-							
+							bitOffset = i;
 						}
+						else
+						{
+							bitOffset = 7 - i;
+						}
+							
+						uint8_t firstColorNumBit = (spFetchSecondByte >> bitOffset) & 1;
+						uint8_t secondColorNumBit = (spFetchFirstByte >> bitOffset) & 1;
+						pixel.xPos = spriteBeingFetched.xPos + i;
+
+						pixel.colorNum = (firstColorNumBit) << 1 | secondColorNumBit;
+
+						pixel.palette = spriteBeingFetched.flags.palette ? OBP1 : OBP0;
+						pixel.backgroundPrio = spriteBeingFetched.flags.prio;
+
 						
+						// replace transparent pixels in the FIFO that overlap with this current pixel
+						bool transparentPixelOverlap = false;
+						if (!spPixelFIFO.empty())
+						{
+							for (int j = 0; j < spPixelFIFO.size(); j++)
+							{
+								Pixel fifoPixel = spPixelFIFO[j];
+								if ((fifoPixel.xPos == pixel.xPos) && fifoPixel.colorNum == 0 && pixel.colorNum != 0)
+								{
+									spPixelFIFO[j] = pixel;
+									transparentPixelOverlap = true;
+								}
+							}
+						}
+
+						if ((spPixelFIFO.size() < 8 && i >= spFIFOSizeBeforePush) && !transparentPixelOverlap)
+						{	
+							spPixelFIFO.push_back(pixel);
+						}
 					}
 
 					spFetchTileHighCycles = 0;
@@ -441,8 +432,6 @@ void PPU::tick()
 
 				}
 			}
-			
-			
 		}
 		
 
@@ -500,7 +489,7 @@ void PPU::tick()
 					{
 						Pixel spPixel = spPixelFIFO.front();
 
-						spPixelFIFO.pop();
+						spPixelFIFO.erase(spPixelFIFO.begin() + 0);
 
 
 						if (spPixel.colorNum != 0 && !(spPixel.backgroundPrio == 1 && bgPixel.colorNum != 0))
@@ -584,12 +573,7 @@ void PPU::tick()
 					
 				}
 
-				while (!spPixelFIFO.empty())
-				{
-
-					spPixelFIFO.pop();
-
-				}
+				spPixelFIFO.clear();
 
 				spritesBuffer.clear();
 
@@ -636,7 +620,6 @@ void PPU::tick()
 		setMode(VBLANK_1);
 		mmu.requestInterrupt(VBLANK);
 	}
-	
 	
 	statInterruptCheck();
 }

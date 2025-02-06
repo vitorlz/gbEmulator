@@ -142,7 +142,7 @@ int main()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;   
-    gb.readRom("res/testroms/dmg-acid2.gb");
+    gb.readRom("res/testroms/drmario.gb");
 
     double fpsLimit = 1 / 59.73f;
     double currentTime = 0;
@@ -154,6 +154,7 @@ int main()
 
     glfwSwapInterval(0);
 
+  
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -188,6 +189,7 @@ int main()
 
         // input
         // -----
+
         
         if (gb.cpu.tCycles >= 70224)
         {
@@ -234,8 +236,6 @@ int main()
             gb.cpu.tCycles = 0;
            
         }
-
-        
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:

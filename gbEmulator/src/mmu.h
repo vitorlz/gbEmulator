@@ -55,8 +55,12 @@ public:
 	// whenever read using pc increase pc --> read8(PC++)
 	uint8_t read8(uint16_t address);
 	void write8(uint16_t address, uint8_t value);
-	void writeToRom(uint16_t index, uint8_t value);
+	void writeToRomMemory(uint16_t index, uint8_t value);
 
+	bool dmaTransferRequested = false;
+	unsigned int dmaDelay = 0;
+	uint16_t dmaSource;
+	void dmaTransfer(unsigned int count);
 
 	// sets the corresponding bit in IF
 	void requestInterrupt(Interrupt type);

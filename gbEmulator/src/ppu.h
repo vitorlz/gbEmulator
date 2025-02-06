@@ -28,6 +28,7 @@ struct Pixel
 	// color number (ignoring the palette) --> color value from tile data
 	uint8_t colorNum;
 	PALETTE palette;
+	int xPos;
 	
 	// for CGB there is also a prite priority thing
 
@@ -106,7 +107,9 @@ public:
 	MODE ppuMode = OAM_SCAN_2;
 
 	std::queue<Pixel> bgPixelFIFO;
-	std::queue<Pixel> spPixelFIFO;
+	
+	// using a vector instead of a queue because we have to replace transparent obj pixels with opaque ones
+	std::vector<Pixel> spPixelFIFO;
 
 
 	Sprite spriteBeingFetched;

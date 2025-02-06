@@ -30,12 +30,11 @@ void GameBoy::readRom(const std::string rom)
         }
 
         // put first 32kib of rom in mmu rom for now since we are using mbc0
-
         for (uint16_t i = 0; i < 0x8000; i++)
         {
             //mmu.rom[i] = fullrom[i];
 
-            mmu.writeToRom(i, fullrom[i]);
+            mmu.writeToRomMemory(i, fullrom[i]);
         }
         
         is.close();
