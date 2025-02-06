@@ -16,10 +16,10 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 // settings
-const unsigned int SCR_WIDTH = 480;
-const unsigned int SCR_HEIGHT = 432;
+const unsigned int SCR_WIDTH = 320;
+const unsigned int SCR_HEIGHT = 288;
 
-int main()
+int main(int argc, char* argv[])
 {
     // glfw: initialize and configure
     // ------------------------------
@@ -51,6 +51,8 @@ int main()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
+    
 
     std::string vertexCode;
     std::string fragmentCode;
@@ -142,19 +144,17 @@ int main()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;   
-    gb.readRom("res/testroms/drmario.gb");
-
-    double fpsLimit = 1 / 59.73f;
-    double currentTime = 0;
-    double lastFrameTime = 0;
-    int frameCount = 0;
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/drmario.gb";
+    gb.readRom(rom.c_str());
 
     //JsonTest jsonTest(gb);
     //jsonTest.RunAllTests();
 
     glfwSwapInterval(0);
 
-  
+    double lastTime = 0;
+    double currentTime = 0;
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -164,36 +164,47 @@ int main()
         // at every instruction and if the number of cycles per second surpasses 1,048,576 we will have to sleep and wait a bit. 
         // cpu instructions will tick other systems depending on how many cycles they take.
         // ppu should be updated every t-cycle, this means that we need to tick the ppu 4x for every m-cycle
-        
-
         currentTime = glfwGetTime();
-        double deltaTime = currentTime - lastFrameTime;
-       
+        
         if (!gb.isCPUHalted())
         {
             uint8_t opcode = gb.fetch();
-            
-           // std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+
+            // std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+            gb.checkForInput(window);
             gb.decodeAndExecute(opcode);
-
-
         }
         else
         {
             gb.cpu.AddCycle();
         }
-       
+
         gb.handleInterrupts();
-     
-        //std::cout << "tcycles: " << gb.cpu.tCycles << "\n";
 
-        // input
-        // -----
-
-        
         if (gb.cpu.tCycles >= 70224)
         {
             processInput(window);
+            for (int i = 32; i < 349; i++)
+            {
+                if (glfwGetKey(window, i) == GLFW_PRESS && !gb.keyDown[i])
+                {
+                    gb.keyPressed[i] = true;
+                }
+                else
+                {
+                    gb.keyPressed[i] = false;
+                }
+
+                if (glfwGetKey(window, i) == GLFW_PRESS)
+                {
+                    gb.keyDown[i] = true;
+
+                }
+                else
+                {
+                    gb.keyDown[i] = false;
+                }
+            }
 
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
@@ -206,37 +217,31 @@ int main()
             glBindVertexArray(VAO);
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
-           
-            glfwSwapBuffers(window);
-            glfwPollEvents();
-
-            
-          //if ((currentTime - lastFrameTime) < fpsLimit)
-          //{
-          //      //std::this_thread::sleep_for(std::chrono::seconds((long long)(fpsLimit - (currentTime - lastFrameTime))));
-
-          //      //std::cout << "sleeping for " << deltaTime << " seconds" << "\n";
-          //}
-
             static int frameCount = 0;
 
             frameCount++;
 
-            if (frameCount >= 60)
-            {
-                std::cout << "fps: " << 1 / (currentTime - lastFrameTime) << "\n";
+            gb.cpu.tCycles = 0;
 
-                frameCount = 0;
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+
+            //lastTime = currentTime;
+
+            while ((glfwGetTime() - currentTime) < (1.0 / 73.5))
+            {
+                continue;
             }
 
-           
-
-           lastFrameTime = currentTime;
-
-            gb.cpu.tCycles = 0;
-           
+            if (frameCount >= 60)
+            {
+                std::cout << "fps: " << 1 / (glfwGetTime() - currentTime) << "\n";
+                frameCount = 0;
+            }     
         }
     }
+
+    
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------

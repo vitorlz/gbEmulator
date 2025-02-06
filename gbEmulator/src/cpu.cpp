@@ -89,9 +89,24 @@ uint8_t CPU::read8(uint16_t address)
 
 	uint8_t val;
 
-	if (mmu.dmaTransferRequested && (address < 0xFF80 || address >  0xFFFE))
+	if (mmu.dmaTransferRequested && (address < 0xFF80 || address >  0xFFFE) && address != 0xFF00)
 	{
 		val = 0xFF;
+	}
+	else if (address == 0xFF00)
+	{
+		uint8_t reg = mmu.read8(address);
+		bool ssba = ((reg >> 5) & 1) ? 0 : 1;
+		bool dPad = ((reg >> 4) & 1) ? 0 : 1;
+
+		if (!ssba && !dPad)
+		{
+			val = 0xFF;
+		}
+		else
+		{
+			val = reg;
+		}
 	}
 	else
 	{
@@ -194,16 +209,32 @@ void CPU::write8(uint16_t address, uint8_t value)
 		mmu.cancelInterrupt(TIMER);
 	}
 
-
-	if (mmu.dmaTransferRequested && (address < 0xFF80 || address >  0xFFFE))
+	if (mmu.dmaTransferRequested && (address < 0xFF80 || address >  0xFFFE) && address != 0xFF00)
 	{
 		AddCycle();
 		return;
 	}
 	else
 	{
+
+		if (address == 0xFF00)
+		{
+			value = ((mmu.read8(address) & ~(3 << 4)) | (((value >> 4) & 3) << 4));
+
+			mmu.write8(address, value);
+			/*std::cout << "joypad before: " << std::dec << (int)mmu.ioRegs[address - 0xFF00] << "\n";
+			std::cout << "writing to joypad " << std::dec << (int)((mmu.ioRegs[address - 0xFF00] & ~(3 << 4)) | ((value >> 4) & 3) << 4) << "\n";
+			std::cout << "actual value " << std::dec << (int)value << "\n";*/
+
+			
+
+		}
+		else
+		{
+			mmu.write8(address, value);
+		}
 		
-		mmu.write8(address, value);
+		
 		AddCycle();
 	}
 }

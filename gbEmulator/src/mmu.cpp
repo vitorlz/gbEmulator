@@ -7,10 +7,10 @@ uint8_t MMU::read8(uint16_t address)
 
 	// put if def right here and it will return before the rest of the if statements if the thing is defined
 	// joypad not implemented yet so return 0xFF
-	if (address == 0xFF00)
+	/*if (address == 0xFF00)
 	{
 		return 0xFF;
-	}
+	}*/
 
 	//return testArray[address];
 
@@ -59,10 +59,10 @@ uint8_t MMU::read8(uint16_t address)
 void MMU::write8(uint16_t address, uint8_t value)
 {
 
-	if (address == 0xFF01)
+	/*if (address == 0xFF01)
 	{
 		std::cout <<  (char)value;
-	}
+	}*/
 
 	if (address == 0xFF46)
 	{
@@ -106,7 +106,11 @@ void MMU::write8(uint16_t address, uint8_t value)
 	}												
 	else if (address >= 0xFF00 && address <= 0xFF7F)
 	{
+		
+		
 		ioRegs[address - 0xFF00] = value;
+		
+		
 	}
 	else if (address >= 0xFF80 && address <= 0xFFFE)
 	{

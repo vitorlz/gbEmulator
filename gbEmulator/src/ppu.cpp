@@ -48,11 +48,14 @@ void PPU::tick()
 {
 
 	scanlineCycles++;
-	
+	static int totalCycles = 0;
+
+
 	if (ppuMode == VBLANK_1)
 	{
-		if (getLY() == 153)
+		if (getLY() == 154)
 		{
+			totalCycles = 0;
 			setMode(OAM_SCAN_2);	
 			setLY(0);
 		}
@@ -620,6 +623,8 @@ void PPU::tick()
 		setMode(VBLANK_1);
 		mmu.requestInterrupt(VBLANK);
 	}
+
+	totalCycles++;
 	
 	statInterruptCheck();
 }
