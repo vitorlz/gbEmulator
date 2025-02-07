@@ -153,6 +153,47 @@ void PPU::tick()
 			setMode(DRAWING_3);
 		}
 
+		if (isWindowDisplayEnabled())
+		{
+			// right now Im having to correct for when pixels are discarded in a scanline where there is a window. 
+			// Still not working. getSCX() % 8 sometimes equals 0 in mario tennis which messes up the window still (I think).
+			// also, when the ball touches the window it bugs out. Definitely a problem with how im counting LX.
+			int correction;
+			if ((getSCX() % 8) > 0)
+				correction = (getSCX() % 8) - 1;
+			else
+				correction = 0;
+
+
+			if (wyEqualLyThisFrame && (((LX + 8) - correction) >= getWX() - 7) && !fetchingWindow)
+			{
+
+
+				//std::cout << "window is enabled at fetcherXPositionCounter: " << fetcherXPositionCounter << " and LX: " << LX << " LY: " << std::dec << (int)getLY() << " and WX " << std::dec << (int)getWX() << "\n";
+				fetchingWindow = true;
+
+
+				bgFetchTileNumCycles = 0;
+				bgFetchTileLowCycles = 0;
+				bgFetchTileHighCycles = 0;
+				bgPushToFifoCycles = 0;
+				fetcherXPositionCounter = 0;
+				bgDrawingState = BG_FETCH_TILE_NUM;
+
+				while (!bgPixelFIFO.empty())
+				{
+					bgPixelFIFO.pop();
+				}
+			}
+
+
+		}
+		else
+		{
+			fetchingWindow = false;
+
+		}
+
 		// disable first fetch condition so that we can start discarding scx%8 pixels.
 		if (scanlineCycles > 86)
 		{
@@ -181,7 +222,7 @@ void PPU::tick()
 			{
 				uint16_t backgroundMapStart = windowTileMapSelect() ? 0x9C00 : 0x9800;
 
-				uint16_t offset = (fetcherXPositionCounter / 8) + (32 * (windowLineCounter / 8));
+				uint16_t offset = (((fetcherXPositionCounter / 8)  + (32 * (windowLineCounter / 8))));
 
 				currentBgTileNumber = mmu.read8(backgroundMapStart + offset);
 
@@ -260,7 +301,7 @@ void PPU::tick()
 				// again at the same fetcherXPositionCounter and discard 8 more pixels. After that, run normally.
 				if (firstBgFetch)
 				{
-					bgDrawingState = BG_FETCH_TILE_NUM;
+					bgDrawingState = BG_FETCH_TILE_NUM;	
 				}
 				else
 				{
@@ -279,12 +320,14 @@ void PPU::tick()
 
 			if (bgPushToFifoCycles >= 2)
 			{
-				if (bgPixelFIFO.empty() && !spriteFetchEnabled)
+				if (bgPixelFIFO.empty() && !spriteFetchEnabled && !bgFetchBuffer.empty())
 				{
 					
 
 					for (int i = 0; i < 8; i++)
 					{
+
+						//bgFetchBuffer.front();
 					
 						bgPixelFIFO.push(bgFetchBuffer.front());
 						bgFetchBuffer.pop();
@@ -444,16 +487,30 @@ void PPU::tick()
 		{
 			if (calculateDiscardedPixels)
 			{
-				numOfPixelsDiscarded = (getSCX() % 8);
+
+				if (fetchingWindow)
+				{
+					
+					numOfPixelsDiscarded = 0;
+					//std::cout << "fetching window enabled? " << fetchingWindow << " window bit enabled? " << isWindowDisplayEnabled();
+				}
+				else
+				{
+					numOfPixelsDiscarded = (getSCX() % 8);
+					//std::cout << "numOfPixelsDiscarded: " << numOfPixelsDiscarded << "\n";
+					//std::cout << "discard at: " << fetcherXPositionCounter << " and LX: " << LX << " LY: " << std::dec << (int)getLY() << " and WX " << std::dec << (int)getWX() << "\n";
+					//std::cout << "fetching window enabled? " << fetchingWindow << " window bit enabled? " << isWindowDisplayEnabled();
+				}
+
 				pixelsToBeDiscarded = numOfPixelsDiscarded;
 				calculateDiscardedPixels = false;
 			}
 
+			
 
 			if (pixelsToBeDiscarded > 0)
 			{
 				bgFetchBuffer.pop();
-
 				pixelsToBeDiscarded--;
 			}
 			else
@@ -461,6 +518,10 @@ void PPU::tick()
 				discardPixels = false;
 			}
 		}
+		
+		
+		
+		
 
 		// --------------------------- PUSH PIXELS TO LCD -----------------------------------------
 		if (!bgPixelFIFO.empty())
@@ -473,8 +534,6 @@ void PPU::tick()
 				
 				uint8_t pixelColor;
 				
-			
-
 				// only push pixels after LX > 8 (after (scx%8) + 8 pixels where discarded). 
 				if (LX >= 8)
 				{
@@ -494,7 +553,6 @@ void PPU::tick()
 
 						spPixelFIFO.erase(spPixelFIFO.begin() + 0);
 
-
 						if (spPixel.colorNum != 0 && !(spPixel.backgroundPrio == 1 && bgPixel.colorNum != 0))
 						{
 							pixelColor = getPixelColor(spPixel.palette, spPixel.colorNum);
@@ -509,41 +567,22 @@ void PPU::tick()
 
 					}
 
-				
-
 					LCD[((160 * 144) - ((getLY() * 160)  + (160 - (LX - 8))))] = pixelColor;
+
+
 				}
 
-				LX++;
+				
 
 				if (fetchingWindow)
 				{
 					windowPixelWasDrawn = true;
 				}
+				LX++;
 
-
-				if ((isWindowDisplayEnabled() && wyEqualLyThisFrame && ((LX + 8) >= (getWX() - 7))))
-				{
-					fetchingWindow = true;
-					
-					if (resetForWindowFetch)
-					{
-						fetcherXPositionCounter = 0;
-						bgDrawingState = BG_FETCH_TILE_NUM;
-
-						for (int i = 0; i < bgPixelFIFO.size(); i++)
-						{
-							bgPixelFIFO.pop();
-						}
-
-						resetForWindowFetch = false;
-					}
-				}
-				else 
-				{
-					fetchingWindow = false;
-					resetForWindowFetch = true;
-				}
+				
+				
+				
 			}
 
 			// DRAWING MODE ENDED
@@ -564,7 +603,7 @@ void PPU::tick()
 				bgDrawingState = BG_FETCH_TILE_NUM;
 				numOfPixelsDiscarded = 0;
 
-				for (int i = 0; i < bgPixelFIFO.size(); i++)
+				while(!bgPixelFIFO.empty())
 				{
 					bgPixelFIFO.pop();
 				}

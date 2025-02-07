@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;   
-    std::string rom = argc > 1 ? argv[1] : "res/testroms/drmario.gb";
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/pitman.gb";
     gb.readRom(rom.c_str());
 
     //JsonTest jsonTest(gb);
