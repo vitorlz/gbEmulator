@@ -189,6 +189,22 @@ void CPU::handleInterrupts()
 
 		AddCycle();
 	}
+	else if (mmu.isInterruptRequested(SERIAL) && mmu.isInterruptEnabled(SERIAL))
+	{
+		// two m-cycles while nothing happens
+		AddCycle();
+		AddCycle();
+
+		mmu.cancelInterrupt(SERIAL);
+		IME = 0;
+
+		write8(--SP, PC >> 8);
+		write8(--SP, PC & 0xFF);
+
+		PC = 0x58;
+
+		AddCycle();
+	}
 	
 }
 
@@ -258,8 +274,7 @@ void CPU::write16(uint16_t address, uint16_t value)
 }
 
 void CPU::AddCycle()
-{
-
+{	
 
 	if (mmu.dmaTransferRequested)
 	{
@@ -302,6 +317,7 @@ void CPU::AddCycle()
 		// was doing ppu.isDisplayEnabled() in the if statement before, this was causing issues with DR. Mario.
 		if (true)
 		{
+			
 			ppu.tick();
 		}
 		

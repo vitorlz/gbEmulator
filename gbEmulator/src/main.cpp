@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;   
-    std::string rom = argc > 1 ? argv[1] : "res/testroms/pitman.gb";
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/dmg-acid2.gb";
     gb.readRom(rom.c_str());
 
     //JsonTest jsonTest(gb);
@@ -170,7 +170,26 @@ int main(int argc, char* argv[])
         {
             uint8_t opcode = gb.fetch();
 
-            // std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+
+            if (gb.keyDown[GLFW_KEY_A])
+            {
+                std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+
+              
+                //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+            }
+
+            if (gb.keyDown[GLFW_KEY_B])
+            {
+                std::cout << std::dec << "IE: " << (int)gb.mmu.read8(0xFFFF) << "\n";
+                std::cout << "IME: " << gb.cpu.IME << "\n";
+
+
+            }
+
+           
+
+           
             gb.checkForInput(window);
             gb.decodeAndExecute(opcode);
         }

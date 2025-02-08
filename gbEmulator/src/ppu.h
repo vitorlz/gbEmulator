@@ -92,6 +92,8 @@ public:
 	unsigned int bgFetchTileHighCycles = 0;
 	unsigned int bgPushToFifoCycles = 0;
 
+	bool spriteWasFetched = false;
+
 	unsigned int spFetchTileNumCycles = 0;
 	unsigned int spFetchTileLowCycles = 0;
 	unsigned int spFetchTileHighCycles = 0;
@@ -138,10 +140,12 @@ public:
 	bool spriteTallMode();
 	bool isSpriteEnabled();
 	bool bgAndWindowEnabled();
+	void reset();
 
 	uint16_t bgFetchFirstByteAddress;
 	bool firstBgFetch = true;
 	bool spriteFound = false;
+	bool displayOff = false;
 
 	uint8_t bgFetchFirstByte;
 	uint8_t bgFetchSecondByte;

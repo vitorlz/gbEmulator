@@ -32,6 +32,63 @@ void PPU::statInterruptCheck()
 	oldStat = curStat;
 }
 
+void PPU::reset()
+{
+	setMode(HBLANK_0);
+	setLY(0);
+
+	fetcherXPositionCounter = 0;
+	fetchingWindow = false;
+	resetForWindowFetch = true;
+	bgFetchTileNumCycles = 0;
+	bgFetchTileLowCycles = 0;
+	bgFetchTileHighCycles = 0;
+	bgPushToFifoCycles = 0;
+	pixelsToBeDiscarded = 0;
+	spFetchTileNumCycles = 0;
+	spFetchTileLowCycles = 0;
+	spFetchTileHighCycles = 0;
+	spPushToFifoCycles = 0;
+	bgDrawingState = BG_FETCH_TILE_NUM;
+	spDrawingState = SP_FETCH_TILE_NUM;
+	numOfPixelsDiscarded = 0;
+
+
+	while (!bgPixelFIFO.empty())
+	{
+		bgPixelFIFO.pop();
+	}
+
+	while (!bgFetchBuffer.empty())
+	{
+
+		bgFetchBuffer.pop();
+
+	}
+
+	spPixelFIFO.clear();
+
+	spritesBuffer.clear();
+
+	LX = 0;
+	firstBgFetch = true;
+	discardPixels = true;
+	exittedDrawingMode = true;
+	calculateDiscardedPixels = true;
+	spriteFetchEnabled = false;
+
+	windowPixelWasDrawn = false;
+
+
+	exittedDrawingMode = false;
+	firstHBlankCycle = true;
+	scanlineCycles = 0;
+
+	windowLineCounter = 0;
+	wyEqualLyThisFrame = false;
+	wyEqualLy = false;
+}
+
 void PPU::setMode(MODE mode)
 {
 	ppuMode = mode;
@@ -46,27 +103,31 @@ void PPU::setMode(MODE mode)
 
 void PPU::tick()
 {
-
 	scanlineCycles++;
 	static int totalCycles = 0;
+	
 
+	// Check for LYC == LY interrupt
+	lycEqualLy = checkLycEqualLy() ? 1 : 0;
+	setSTATCoincidenceFlag(lycEqualLy);
 
 	if (ppuMode == VBLANK_1)
 	{
 		if (getLY() == 154)
 		{
 			totalCycles = 0;
-			setMode(OAM_SCAN_2);	
+			ppuMode = OAM_SCAN_2;
 			setLY(0);
+
+			
 		}
 		windowLineCounter = 0;
 		wyEqualLyThisFrame = false;
 		wyEqualLy = false;
 	}
 
-	// Check for LYC == LY interrupt
-	lycEqualLy = checkLycEqualLy() ? 1 : 0;
-	setSTATCoincidenceFlag(lycEqualLy);
+	
+	
 	
 	// ----------------------------- OAM SCAN ---------------------------------------------------
 	if (scanlineCycles <= 80 && ppuMode != VBLANK_1)
@@ -74,11 +135,13 @@ void PPU::tick()
 
 		if (scanlineCycles == 1)
 		{
-			//setMode(OAM_SCAN_2);
-			/*std::cout << "OAM SCAN START" << "\n";*/
-		}
 
-		
+			
+			setMode(OAM_SCAN_2);
+			/*std::cout << "OAM SCAN START" << "\n";*/
+
+
+		}
 
 		// oam scan --> check a new oam entry every 2 t-cycles
 		if (scanlineCycles % 2 == 0)
@@ -128,6 +191,7 @@ void PPU::tick()
 
 				sprite.flags = spriteFlags;
 				
+				
 				spritesBuffer.push_back(sprite);
 			}
 
@@ -158,18 +222,20 @@ void PPU::tick()
 			// right now Im having to correct for when pixels are discarded in a scanline where there is a window. 
 			// Still not working. getSCX() % 8 sometimes equals 0 in mario tennis which messes up the window still (I think).
 			// also, when the ball touches the window it bugs out. Definitely a problem with how im counting LX.
-			int correction;
-			if ((getSCX() % 8) > 0)
-				correction = (getSCX() % 8) - 1;
+			int correction = 0;
+			if (!bgFetchBuffer.empty())
+				correction -= (bgFetchBuffer.size() - 1);
 			else
 				correction = 0;
 
 
-			if (wyEqualLyThisFrame && (((LX + 8) - correction) >= getWX() - 7) && !fetchingWindow)
+			if (wyEqualLyThisFrame && (((LX + 8)) >= getWX() - 7) && !fetchingWindow)
 			{
-
-
-				//std::cout << "window is enabled at fetcherXPositionCounter: " << fetcherXPositionCounter << " and LX: " << LX << " LY: " << std::dec << (int)getLY() << " and WX " << std::dec << (int)getWX() << "\n";
+				
+				//std::cout << "correction: " << correction << "\n";
+				/*std::cout << "window is enabled at fetcherXPositionCounter: " << fetcherXPositionCounter << " and LX: " << LX << " LY: " << std::dec << (int)getLY() << " and WX " << std::dec << (int)getWX() << " SCX % 8: " << getSCX() % 8 << " SCX " << std::dec << (int)getSCX() << "\n";
+				std::cout << "fetch buffer size: " << bgFetchBuffer.size() << "\n";*/
+				
 				fetchingWindow = true;
 
 
@@ -179,11 +245,18 @@ void PPU::tick()
 				bgPushToFifoCycles = 0;
 				fetcherXPositionCounter = 0;
 				bgDrawingState = BG_FETCH_TILE_NUM;
+				spriteFetchEnabled = false;
+				spDrawingState = SP_FETCH_TILE_NUM;
 
 				while (!bgPixelFIFO.empty())
 				{
 					bgPixelFIFO.pop();
 				}
+
+				
+				
+				spPixelFIFO.clear();
+
 			}
 
 
@@ -320,7 +393,7 @@ void PPU::tick()
 
 			if (bgPushToFifoCycles >= 2)
 			{
-				if (bgPixelFIFO.empty() && !spriteFetchEnabled && !bgFetchBuffer.empty())
+				if (bgPixelFIFO.empty() && !bgFetchBuffer.empty())
 				{
 					
 
@@ -340,11 +413,11 @@ void PPU::tick()
 					
 				}
 			}
-			// Don't forget to leave the BG_PUSH_TO_FIFO state
+			
 		}
 
 		// CHECK IF REACHED A SPRITE 
-		if (!spriteFetchEnabled)
+		if (!spriteFetchEnabled && isSpriteEnabled())
 		{
 			for (int i = 0; i < spritesBuffer.size(); i++)
 			{
@@ -354,8 +427,13 @@ void PPU::tick()
 					spriteBeingFetched = sprite;
 					spriteFetchEnabled = true;		
 
+					spriteWasFetched = true;
+
+					
 					// remove sprite from buffer
 					spritesBuffer.erase(spritesBuffer.begin() + i);
+
+					break;
 		
 					//std::cout << "sprite found" << "\n
 				}
@@ -368,7 +446,18 @@ void PPU::tick()
 		// which is not what we want.
 		if (spriteFetchEnabled)
 		{
-			if (spDrawingState == SP_FETCH_TILE_NUM)
+			// cancel sprite fetch if sprite rendering is disabled mid fetch
+			if (!isSpriteEnabled())
+			{
+				spDrawingState = SP_FETCH_TILE_NUM;
+				spriteFetchEnabled = false;
+				spFetchTileNumCycles = 0;
+				spFetchTileLowCycles = 0;
+				spFetchTileHighCycles = 0;
+				spPushToFifoCycles = 0;
+			}
+
+			if (spDrawingState == SP_FETCH_TILE_NUM && spriteFetchEnabled)
 			{
 				spFetchTileNumCycles++;
 
@@ -381,7 +470,7 @@ void PPU::tick()
 					spDrawingState = SP_FETCH_TILE_LOW;
 				}	
 			}
-			else if (spDrawingState == SP_FETCH_TILE_LOW)
+			else if (spDrawingState == SP_FETCH_TILE_LOW && spriteFetchEnabled)
 			{
 				spFetchTileLowCycles++;
 
@@ -410,7 +499,7 @@ void PPU::tick()
 					spDrawingState = SP_FETCH_TILE_HIGH_AND_PUSH;
 				}
 			}
-			else if (spDrawingState == SP_FETCH_TILE_HIGH_AND_PUSH)
+			else if (spDrawingState == SP_FETCH_TILE_HIGH_AND_PUSH && spriteFetchEnabled)
 			{
 				spFetchTileHighCycles++;
 
@@ -425,7 +514,10 @@ void PPU::tick()
 					std::cout << "second byte address: " << std::dec << (int)spFetchSecondByteAddress << "\n";*/
 
 					int spFIFOSizeBeforePush = spPixelFIFO.size();
-					
+					int firstTransparentIndex = 0;
+					bool firstTransparentOverlap = true;
+
+
 					for (int i = 0; i < 8; i++)
 					{
 						Pixel pixel;
@@ -447,27 +539,36 @@ void PPU::tick()
 
 						pixel.colorNum = (firstColorNumBit) << 1 | secondColorNumBit;
 
+
 						pixel.palette = spriteBeingFetched.flags.palette ? OBP1 : OBP0;
 						pixel.backgroundPrio = spriteBeingFetched.flags.prio;
 
 						
 						// replace transparent pixels in the FIFO that overlap with this current pixel
+
 						bool transparentPixelOverlap = false;
-						if (!spPixelFIFO.empty())
+						if (spFIFOSizeBeforePush != 0)
 						{
-							for (int j = 0; j < spPixelFIFO.size(); j++)
+							for (int j = 0; j < spFIFOSizeBeforePush; j++)
 							{
 								Pixel fifoPixel = spPixelFIFO[j];
-								if ((fifoPixel.xPos == pixel.xPos) && fifoPixel.colorNum == 0 && pixel.colorNum != 0)
+								if (((fifoPixel.xPos == pixel.xPos) && (fifoPixel.colorNum == 0 ||(fifoPixel.backgroundPrio > pixel.backgroundPrio))))
 								{
-									spPixelFIFO[j] = pixel;
-									transparentPixelOverlap = true;
+
+									if (pixel.colorNum != 0)
+									{
+										spPixelFIFO[j] = pixel;
+										transparentPixelOverlap = true;
+									}
+									
 								}
 							}
 						}
 
 						if ((spPixelFIFO.size() < 8 && i >= spFIFOSizeBeforePush) && !transparentPixelOverlap)
 						{	
+
+							
 							spPixelFIFO.push_back(pixel);
 						}
 					}
@@ -475,6 +576,23 @@ void PPU::tick()
 					spFetchTileHighCycles = 0;
 					spDrawingState = SP_FETCH_TILE_NUM;
 					spriteFetchEnabled = false;
+
+					for (int i = 0; i < spritesBuffer.size(); i++)
+					{
+						Sprite sprite = spritesBuffer[i];
+						if (sprite.xPos == LX)
+						{
+							spriteBeingFetched = sprite;
+							spriteFetchEnabled = true;
+
+							// remove sprite from buffer
+							spritesBuffer.erase(spritesBuffer.begin() + i);
+
+							//std::cout << "sprite found" << "\n
+						}
+						
+					}
+					
 
 				}
 			}
@@ -545,6 +663,7 @@ void PPU::tick()
 					{
 						// background color number is 0 if background and window are disabled
 						pixelColor = getPixelColor(bgPixel.palette, 0x00);
+						bgPixel.colorNum = 0;
 					}
 
 					if (isSpriteEnabled() && !spPixelFIFO.empty())
@@ -553,7 +672,11 @@ void PPU::tick()
 
 						spPixelFIFO.erase(spPixelFIFO.begin() + 0);
 
-						if (spPixel.colorNum != 0 && !(spPixel.backgroundPrio == 1 && bgPixel.colorNum != 0))
+						if (   (!(spPixel.backgroundPrio == 1 && (bgPixel.colorNum != 0)) 
+							||  (spPixel.backgroundPrio == 0)) 
+							&&   spPixel.colorNum != 0
+							
+							)
 						{
 							pixelColor = getPixelColor(spPixel.palette, spPixel.colorNum);
 
@@ -565,11 +688,9 @@ void PPU::tick()
 						}
 
 
-					}
+					}	
 
-					LCD[((160 * 144) - ((getLY() * 160)  + (160 - (LX - 8))))] = pixelColor;
-
-
+					LCD[((160 * 144) - ((getLY() * 160) + (160 - (LX - 8))))] = pixelColor;
 				}
 
 				
@@ -578,6 +699,8 @@ void PPU::tick()
 				{
 					windowPixelWasDrawn = true;
 				}
+
+				
 				LX++;
 
 				
@@ -586,7 +709,7 @@ void PPU::tick()
 			}
 
 			// DRAWING MODE ENDED
-			if (LX == 160 + 8)
+			if (LX == 168)
 			{
 				fetcherXPositionCounter = 0;
 				fetchingWindow = false;
@@ -601,7 +724,9 @@ void PPU::tick()
 				spFetchTileHighCycles = 0;
 				spPushToFifoCycles = 0;
 				bgDrawingState = BG_FETCH_TILE_NUM;
+				spDrawingState = SP_FETCH_TILE_NUM;
 				numOfPixelsDiscarded = 0;
+				
 
 				while(!bgPixelFIFO.empty())
 				{
