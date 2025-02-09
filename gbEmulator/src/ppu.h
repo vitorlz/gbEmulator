@@ -1,9 +1,10 @@
 #pragma once
 
-#include <memory>
-#include "mmu.h"
 #include <vector>
 #include <queue>
+#include <memory>
+#include "mmu.h"
+
 
 enum MODE
 {
@@ -92,8 +93,6 @@ public:
 	unsigned int bgFetchTileHighCycles = 0;
 	unsigned int bgPushToFifoCycles = 0;
 
-	bool spriteWasFetched = false;
-
 	unsigned int spFetchTileNumCycles = 0;
 	unsigned int spFetchTileLowCycles = 0;
 	unsigned int spFetchTileHighCycles = 0;
@@ -103,8 +102,9 @@ public:
 	DRAWINGSTATE spDrawingState = SP_FETCH_TILE_NUM;
 
 	unsigned int currentBgTileNumber;
-
 	unsigned int fetcherXPositionCounter = 0;
+
+	int scanlineDrawnPixels = 0;
 
 	MODE ppuMode = OAM_SCAN_2;
 

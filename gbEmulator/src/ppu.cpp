@@ -1,5 +1,6 @@
-#include "ppu.h"
 #include <iostream>
+#include "ppu.h"
+
 
 #define OAM_START_ADDRESS 0xFE00
 #define LY_ADDRESS 0xFF44
@@ -52,7 +53,7 @@ void PPU::reset()
 	bgDrawingState = BG_FETCH_TILE_NUM;
 	spDrawingState = SP_FETCH_TILE_NUM;
 	numOfPixelsDiscarded = 0;
-
+	scanlineDrawnPixels = 0;
 
 	while (!bgPixelFIFO.empty())
 	{
@@ -104,9 +105,7 @@ void PPU::setMode(MODE mode)
 void PPU::tick()
 {
 	scanlineCycles++;
-	static int totalCycles = 0;
 	
-
 	// Check for LYC == LY interrupt
 	lycEqualLy = checkLycEqualLy() ? 1 : 0;
 	setSTATCoincidenceFlag(lycEqualLy);
@@ -115,32 +114,21 @@ void PPU::tick()
 	{
 		if (getLY() == 154)
 		{
-			totalCycles = 0;
 			ppuMode = OAM_SCAN_2;
-			setLY(0);
-
-			
+			setLY(0);	
 		}
 		windowLineCounter = 0;
 		wyEqualLyThisFrame = false;
 		wyEqualLy = false;
 	}
 
-	
-	
-	
 	// ----------------------------- OAM SCAN ---------------------------------------------------
 	if (scanlineCycles <= 80 && ppuMode != VBLANK_1)
 	{	
 
 		if (scanlineCycles == 1)
 		{
-
-			
 			setMode(OAM_SCAN_2);
-			/*std::cout << "OAM SCAN START" << "\n";*/
-
-
 		}
 
 		// oam scan --> check a new oam entry every 2 t-cycles
@@ -150,10 +138,7 @@ void PPU::tick()
 			std::vector<uint8_t> oamByteBuffer;
 			// each sprite is 4 bytes --> read a sprite from oam
 			for (int i = 0; i < 4; i++)
-			{/*
-				std::cout << "OAM SCAN COUNTER: " << oamScanCounter << "\n";
-				std::cout << "OAM BUFFER READING FROM: " << OAM_START_ADDRESS + (oamScanCounter * 4 + i) << "\n";
-				std::cout << "OAM BYTE BUFFER SIZE: " << oamByteBuffer.size() << "\n";*/
+			{
 				oamByteBuffer.push_back(mmu.read8(OAM_START_ADDRESS + (oamScanCounter * 4 + i)));
 			}
 
@@ -162,18 +147,11 @@ void PPU::tick()
 			uint8_t xPos = oamByteBuffer[1];
 			uint8_t tileNum = oamByteBuffer[2];
 			
-
 			uint8_t flags = oamByteBuffer[3];
-
 			bool tallMode = spriteTallMode();
-
 			uint8_t spriteHeight = tallMode ? 16 : 8;
 
-			// Check conditions and add sprite to spriteBuffer if all conditions pass:
-
 			// if hit a sprite, add to buffer
-		
-
 			if (xPos >= 0    &&    (currentLY + 16) >= yPos    &&   (currentLY + 16) < (yPos + spriteHeight)    &&    spritesBuffer.size() < 10)
 			{
 				Sprite sprite;
@@ -191,7 +169,6 @@ void PPU::tick()
 
 				sprite.flags = spriteFlags;
 				
-				
 				spritesBuffer.push_back(sprite);
 			}
 
@@ -202,7 +179,6 @@ void PPU::tick()
 	{
 		oamScanCounter = 0;
 	}
-
 
 	if (!wyEqualLyThisFrame)
 	{
@@ -219,25 +195,9 @@ void PPU::tick()
 
 		if (isWindowDisplayEnabled())
 		{
-			// right now Im having to correct for when pixels are discarded in a scanline where there is a window. 
-			// Still not working. getSCX() % 8 sometimes equals 0 in mario tennis which messes up the window still (I think).
-			// also, when the ball touches the window it bugs out. Definitely a problem with how im counting LX.
-			int correction = 0;
-			if (!bgFetchBuffer.empty())
-				correction -= (bgFetchBuffer.size() - 1);
-			else
-				correction = 0;
-
-
-			if (wyEqualLyThisFrame && (((LX + 8)) >= getWX() - 7) && !fetchingWindow)
+			if (wyEqualLyThisFrame && (scanlineDrawnPixels >= getWX() - 7) && !fetchingWindow)
 			{
-				
-				//std::cout << "correction: " << correction << "\n";
-				/*std::cout << "window is enabled at fetcherXPositionCounter: " << fetcherXPositionCounter << " and LX: " << LX << " LY: " << std::dec << (int)getLY() << " and WX " << std::dec << (int)getWX() << " SCX % 8: " << getSCX() % 8 << " SCX " << std::dec << (int)getSCX() << "\n";
-				std::cout << "fetch buffer size: " << bgFetchBuffer.size() << "\n";*/
-				
 				fetchingWindow = true;
-
 
 				bgFetchTileNumCycles = 0;
 				bgFetchTileLowCycles = 0;
@@ -246,6 +206,7 @@ void PPU::tick()
 				fetcherXPositionCounter = 0;
 				bgDrawingState = BG_FETCH_TILE_NUM;
 				spriteFetchEnabled = false;
+
 				spDrawingState = SP_FETCH_TILE_NUM;
 
 				while (!bgPixelFIFO.empty())
@@ -253,13 +214,13 @@ void PPU::tick()
 					bgPixelFIFO.pop();
 				}
 
-				
-				
+				while (!bgFetchBuffer.empty())
+				{
+					bgFetchBuffer.pop();
+				}
+
 				spPixelFIFO.clear();
-
 			}
-
-
 		}
 		else
 		{
@@ -313,7 +274,6 @@ void PPU::tick()
 
 				// remember --> 2 bits per pixel --> 2 bytes = 8 pixels --> the byte fetched here combined with the byte fetched in the next step will
 				// yield 8 pixels;
-			
 				if (baseAddress == 0x8000)
 				{
 					bgFetchFirstByteAddress = baseAddress + (currentBgTileNumber * 16);
@@ -350,12 +310,10 @@ void PPU::tick()
 			if (bgFetchTileHighCycles >= 2)
 			{
 				// the first time this happens in a scanline the status is fully reset
-
 				uint16_t bgFetchSecondByteAddress = bgFetchFirstByteAddress + 1;
 
 				bgFetchSecondByte = mmu.read8(bgFetchSecondByteAddress);
 				
-
 				for (int i = 0; i < 8; i++)
 				{
 					Pixel pixel;
@@ -393,15 +351,12 @@ void PPU::tick()
 
 			if (bgPushToFifoCycles >= 2)
 			{
-				if (bgPixelFIFO.empty() && !bgFetchBuffer.empty())
+				if (bgPixelFIFO.empty() && !bgFetchBuffer.empty() && !spriteFetchEnabled)
 				{
 					
 
 					for (int i = 0; i < 8; i++)
 					{
-
-						//bgFetchBuffer.front();
-					
 						bgPixelFIFO.push(bgFetchBuffer.front());
 						bgFetchBuffer.pop();
 
@@ -427,23 +382,13 @@ void PPU::tick()
 					spriteBeingFetched = sprite;
 					spriteFetchEnabled = true;		
 
-					spriteWasFetched = true;
-
-					
-					// remove sprite from buffer
 					spritesBuffer.erase(spritesBuffer.begin() + i);
 
 					break;
-		
-					//std::cout << "sprite found" << "\n
 				}
 			}
 		}
 		
-
-		// maybe also use drawingState == bgpushtofifo as a condition because that would mean that the background fetcher is waiting for 
-		// the sprite fetcher, otherwise there is the possibility that we are going to fetch both background and sprite at the same time,
-		// which is not what we want.
 		if (spriteFetchEnabled)
 		{
 			// cancel sprite fetch if sprite rendering is disabled mid fetch
@@ -488,10 +433,7 @@ void PPU::tick()
 						offset = (((spriteTallMode() == 1 ? 16 : 8) - 1) * 2) - offset;
 					}
 					
-
 					spFetchFirstByteAddress = 0x8000 + (currentSpTileNumber * 16) + offset;
-					
-					//std::cout << "Current SP Tile Number: " << currentSpTileNumber << "\n";
 				
 					spFetchFirstByte = mmu.read8(spFetchFirstByteAddress );
 
@@ -509,14 +451,9 @@ void PPU::tick()
 					uint16_t spFetchSecondByteAddress = spFetchFirstByteAddress + 1;
 					spFetchSecondByte = mmu.read8(spFetchSecondByteAddress);
 
-				/*	std::cout << "first byte address: " << std::dec << (int)spFetchFirstByteAddress << "\n";
-
-					std::cout << "second byte address: " << std::dec << (int)spFetchSecondByteAddress << "\n";*/
-
 					int spFIFOSizeBeforePush = spPixelFIFO.size();
 					int firstTransparentIndex = 0;
 					bool firstTransparentOverlap = true;
-
 
 					for (int i = 0; i < 8; i++)
 					{
@@ -545,7 +482,6 @@ void PPU::tick()
 
 						
 						// replace transparent pixels in the FIFO that overlap with this current pixel
-
 						bool transparentPixelOverlap = false;
 						if (spFIFOSizeBeforePush != 0)
 						{
@@ -560,7 +496,6 @@ void PPU::tick()
 										spPixelFIFO[j] = pixel;
 										transparentPixelOverlap = true;
 									}
-									
 								}
 							}
 						}
@@ -588,43 +523,30 @@ void PPU::tick()
 							// remove sprite from buffer
 							spritesBuffer.erase(spritesBuffer.begin() + i);
 
-							//std::cout << "sprite found" << "\n
+							break;
 						}
-						
 					}
-					
-
 				}
 			}
 		}
 		
-
-
 		// discard scx%8 pixels from first fetch
 		if (discardPixels && !firstBgFetch)
 		{
 			if (calculateDiscardedPixels)
 			{
-
 				if (fetchingWindow)
 				{
-					
 					numOfPixelsDiscarded = 0;
-					//std::cout << "fetching window enabled? " << fetchingWindow << " window bit enabled? " << isWindowDisplayEnabled();
 				}
 				else
 				{
 					numOfPixelsDiscarded = (getSCX() % 8);
-					//std::cout << "numOfPixelsDiscarded: " << numOfPixelsDiscarded << "\n";
-					//std::cout << "discard at: " << fetcherXPositionCounter << " and LX: " << LX << " LY: " << std::dec << (int)getLY() << " and WX " << std::dec << (int)getWX() << "\n";
-					//std::cout << "fetching window enabled? " << fetchingWindow << " window bit enabled? " << isWindowDisplayEnabled();
 				}
 
 				pixelsToBeDiscarded = numOfPixelsDiscarded;
 				calculateDiscardedPixels = false;
 			}
-
-			
 
 			if (pixelsToBeDiscarded > 0)
 			{
@@ -637,10 +559,6 @@ void PPU::tick()
 			}
 		}
 		
-		
-		
-		
-
 		// --------------------------- PUSH PIXELS TO LCD -----------------------------------------
 		if (!bgPixelFIFO.empty())
 		{	
@@ -673,42 +591,26 @@ void PPU::tick()
 						spPixelFIFO.erase(spPixelFIFO.begin() + 0);
 
 						if (   (!(spPixel.backgroundPrio == 1 && (bgPixel.colorNum != 0)) 
-							||  (spPixel.backgroundPrio == 0)) 
-							&&   spPixel.colorNum != 0
-							
-							)
+								||  (spPixel.backgroundPrio == 0)) 
+								&&   spPixel.colorNum != 0)
 						{
 							pixelColor = getPixelColor(spPixel.palette, spPixel.colorNum);
-
-
-							/*std::cout << "rendering sprite pixel! " << "\n";
-							std::cout << "LX: " << std::dec << (int)LX << "LY: " << std::dec << (int)getLY() << "\n";
-							std::cout << "sprite fifo size: " << spPixelFIFO.size() << "\n";
-							std::cout << "sprite buffer size: " << spritesBuffer.size() << "\n";*/
 						}
-
-
 					}	
 
 					LCD[((160 * 144) - ((getLY() * 160) + (160 - (LX - 8))))] = pixelColor;
+					scanlineDrawnPixels++;
 				}
-
-				
 
 				if (fetchingWindow)
 				{
 					windowPixelWasDrawn = true;
-				}
-
+				}				
 				
 				LX++;
-
-				
-				
-				
 			}
 
-			// DRAWING MODE ENDED
+			// DRAWING MODE ENDED --> RESET STATE
 			if (LX == 168)
 			{
 				fetcherXPositionCounter = 0;
@@ -726,8 +628,8 @@ void PPU::tick()
 				bgDrawingState = BG_FETCH_TILE_NUM;
 				spDrawingState = SP_FETCH_TILE_NUM;
 				numOfPixelsDiscarded = 0;
+				scanlineDrawnPixels = 0;
 				
-
 				while(!bgPixelFIFO.empty())
 				{
 					bgPixelFIFO.pop();
@@ -741,7 +643,6 @@ void PPU::tick()
 				}
 
 				spPixelFIFO.clear();
-
 				spritesBuffer.clear();
 
 				LX = 0;
@@ -763,8 +664,6 @@ void PPU::tick()
 			setMode(HBLANK_0);
 			firstHBlankCycle = false;
 		}
-		
-		// do nothing for hblank duration 
 	}
 
 	if (scanlineCycles >= 456)
@@ -775,8 +674,6 @@ void PPU::tick()
 			windowLineCounter++;
 			windowPixelWasDrawn = false;
 		}
-
-		
 		exittedDrawingMode = false;
 		firstHBlankCycle = true;
 		scanlineCycles = 0;
@@ -788,8 +685,6 @@ void PPU::tick()
 		mmu.requestInterrupt(VBLANK);
 	}
 
-	totalCycles++;
-	
 	statInterruptCheck();
 }
 

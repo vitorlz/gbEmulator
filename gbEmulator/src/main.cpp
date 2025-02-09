@@ -1,11 +1,13 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <chrono>
 #include <thread>
+
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 
 #include "JsonTest.h"
 
@@ -170,28 +172,24 @@ int main(int argc, char* argv[])
         {
             uint8_t opcode = gb.fetch();
 
-
             if (gb.keyDown[GLFW_KEY_A])
             {
                 std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
-
-              
-                //std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
+                std::cout << "STAT: " << std::hex << (int)gb.mmu.read8(0xFF41) << "\n";
+                std::cout << "E REG: " << std::hex << (int)gb.cpu.regs[A] << "\n";
+                std::cout << "A REG: " << std::hex << (int)gb.cpu.regs[A] << "\n";
+                std::cout << "Z FLAG: " << gb.cpu.getFlagZ() << "\n";
+                std::cout << "PPU STATE: " << gb.ppu.isDisplayEnabled() << "\n";
             }
 
             if (gb.keyDown[GLFW_KEY_B])
             {
                 std::cout << std::dec << "IE: " << (int)gb.mmu.read8(0xFFFF) << "\n";
                 std::cout << "IME: " << gb.cpu.IME << "\n";
-
-
             }
 
-           
-
-           
             gb.checkForInput(window);
-            gb.decodeAndExecute(opcode);
+            gb.decodeAndExecute(opcode);  
         }
         else
         {

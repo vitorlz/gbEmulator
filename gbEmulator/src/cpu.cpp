@@ -1,5 +1,17 @@
+#include <vector>
 #include "cpu.h"
 #include "iostream"
+
+
+#define B 0
+#define C 1
+#define D 2
+#define E 3
+#define H 4
+#define L 5
+#define F 6
+#define A 7
+
 
 CPU::CPU(MMU& mmu, PPU& ppu) 
 	: mmu(mmu),
@@ -236,14 +248,7 @@ void CPU::write8(uint16_t address, uint8_t value)
 		if (address == 0xFF00)
 		{
 			value = ((mmu.read8(address) & ~(3 << 4)) | (((value >> 4) & 3) << 4));
-
 			mmu.write8(address, value);
-			/*std::cout << "joypad before: " << std::dec << (int)mmu.ioRegs[address - 0xFF00] << "\n";
-			std::cout << "writing to joypad " << std::dec << (int)((mmu.ioRegs[address - 0xFF00] & ~(3 << 4)) | ((value >> 4) & 3) << 4) << "\n";
-			std::cout << "actual value " << std::dec << (int)value << "\n";*/
-
-			
-
 		}
 		else
 		{
@@ -287,7 +292,6 @@ void CPU::AddCycle()
 			mmu.dmaTransfer(mmu.dmaDelay);
 		}
 
-		
 		if (mmu.dmaDelay == 161)
 		{
 			mmu.dmaTransferRequested = false;
@@ -314,10 +318,8 @@ void CPU::AddCycle()
 	{
 		tCycles++;
 
-		// was doing ppu.isDisplayEnabled() in the if statement before, this was causing issues with DR. Mario.
 		if (true)
-		{
-			
+		{	
 			ppu.tick();
 		}
 		
@@ -363,7 +365,6 @@ void CPU::AddCycle()
 
 			if (TIMA == 0xFF)
 			{
-				//std::cout << "TIME RELOAD PENDING" << "\n";
 				timaReloadPending = true;
 				mmu.write8(TIMA_ADDRESS, 0x00);
 
@@ -381,9 +382,6 @@ void CPU::AddCycle()
 		if (divCycles >= 256)
 		{
 			mmu.write8(DIV_ADDRESS, DIV >> 8);
-
-			//std::cout << "Full DIV: " << std::dec << (int)(DIV) << "\n";
-			//std::cout << "DIV upper 8 bits value: " << std::dec << (int)(DIV >> 8) << "\n";
 
 			divCycles = 0;
 		}
@@ -1999,7 +1997,6 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 
 		// CB PREFIX INSTRUCTIONS
-
 		case 0xCB:
 		{
 			uint8_t suffix = fetch8();

@@ -1,15 +1,17 @@
 #pragma once 
 
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 #include "cpu.h"
 #include "mmu.h"
 #include "ppu.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <sstream>
+
 
 enum Button
 {

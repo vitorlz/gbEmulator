@@ -1,6 +1,7 @@
-#include "mmu.h"
 #include <cinttypes>
 #include <iostream>
+#include "mmu.h"
+
 
 uint8_t MMU::read8(uint16_t address)
 {
@@ -66,17 +67,9 @@ void MMU::write8(uint16_t address, uint8_t value)
 
 	if (address == 0xFF46)
 	{
-
-		
 		dmaTransferRequested = true;
 
 		dmaSource = dmaSource | ((uint16_t)value << 8);
-		// takes 640 dots in normal speed
-		// start dma
-		// source 
-		// destination is always OAM
-
-		std::cout << "dma transfer" << "\n";
 	}
 
 	// fs there is a dma transfer happening and the cpu tries to access  maybe block writes and reads to (address < 0xFF80 || address >  0xFFFE) during dma

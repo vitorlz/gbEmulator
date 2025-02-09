@@ -1,15 +1,5 @@
 #pragma once 
-
 #include <cinttypes>
-
-#define B 0
-#define C 1
-#define D 2
-#define E 3
-#define H 4
-#define L 5
-#define F 6
-#define A 7
 
 #define DIV_ADDRESS 0xFF04
 #define TIMA_ADDRESS 0xFF05
@@ -17,6 +7,8 @@
 #define TAC_ADDRESS 0xFF07
 #define IF_ADDRESS 0xFF0F
 #define IE_ADDRESS 0xFFFF
+
+
 
 enum Interrupt
 {

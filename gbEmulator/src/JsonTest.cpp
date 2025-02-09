@@ -1,10 +1,12 @@
-#include <nlohmann/json.hpp>
-
-#include "JsonTest.h"
 
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
+#include <nlohmann/json.hpp>
+
+#include "JsonTest.h"
+
 
 
 JsonTest::JsonTest(GameBoy& gb)
