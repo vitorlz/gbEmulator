@@ -38,7 +38,110 @@ void GameBoy::readRom(const std::string rom)
         // put first 32kib of rom in mmu rom for now since we are using mbc0
         for (uint16_t i = 0; i < 0x8000; i++)
         {
-            //mmu.rom[i] = fullrom[i];
+            if (i == 0x0147)
+            {
+                std::cout << "Cartridge type: ";
+                switch (fullrom[i])
+                {
+                case 0x00:
+                    std::cout << "ROM ONLY" << "\n";
+                    mmu.mbc = MBC0;
+                    break;
+                case 0x01:
+                    std::cout << "MBC 1" << "\n";
+                    mmu.mbc = MBC1;
+                    break;
+                }
+                
+            }
+
+            if (i == 0x0148)
+            {
+                std::cout << "Rom size: ";
+                switch (fullrom[i])
+                {
+                case 0x00:
+                    std::cout << "32 KiB" << "\n";
+                    std::cout << "2 ROM banks" << "\n";
+                    break;
+                case 0x01:
+                    std::cout << "64 KiB" << "\n";
+                    std::cout << "4 ROM banks" << "\n";
+                    break;
+                case 0x02:
+                    std::cout << "128 KiB" << "\n";
+                    std::cout << "8 ROM banks" << "\n";
+                    break;
+                case 0x03:
+                    std::cout << "256 KiB" << "\n";
+                    std::cout << "16 ROM banks" << "\n";
+                    break;
+                case 0x04:
+                    std::cout << "512 KiB" << "\n";
+                    std::cout << "32 ROM banks" << "\n";
+                    break;
+                case 0x05:
+                    std::cout << "1 MiB" << "\n";
+                    std::cout << "64 ROM banks" << "\n";
+                    break;
+                case 0x06:
+                    std::cout << "2 MiB" << "\n";
+                    std::cout << "128 ROM banks" << "\n";
+                    break;
+                case 0x07:
+                    std::cout << "4 MiB" << "\n";
+                    std::cout << "256 ROM banks" << "\n";
+                    break;
+                case 0x08:
+                    std::cout << "8 MiB" << "\n";
+                    std::cout << "512 ROM banks" << "\n";
+                    break;
+                case 0x52:
+                    std::cout << "1.1 MiB" << "\n";
+                    std::cout << "72 ROM banks" << "\n";
+                    break;
+                case 0x53:
+                    std::cout << "1.2 MiB" << "\n";
+                    std::cout << "80 ROM banks" << "\n";
+                    break;
+                case 0x54:
+                    std::cout << "1.5 MiB" << "\n";
+                    std::cout << "96 ROM banks" << "\n";
+                    break;
+                }
+            }
+
+            if (i == 0x0149)
+            {
+                std::cout << "SRAM size: ";
+                switch (fullrom[i])
+                {
+                    case 0x00:
+                        std::cout << "0 KiB" << "\n";
+                        std::cout << "No SRAM" << "\n";
+                        break;
+                    case 0x01:
+                        std::cout << "--" << "\n";
+                        std::cout << "Unused" << "\n";
+                        break;
+                    case 0x02:
+                        std::cout << "8 KiB" << "\n";
+                        std::cout << "1 SRAM bank" << "\n";
+                        break;
+                    case 0x03:
+                        std::cout << "32 KiB" << "\n";
+                        std::cout << "4 RAM banks" << "\n";
+                        break;
+                    case 0x04:
+                        std::cout << "128 KiB" << "\n";
+                        std::cout << "16 RAM banks" << "\n";
+                        break;
+                    case 0x05:
+                        std::cout << "64 KiB" << "\n";
+                        std::cout << "8 RAM banks" << "\n";
+                        break;
+                }
+            }
 
             mmu.writeToRomMemory(i, fullrom[i]);
         }

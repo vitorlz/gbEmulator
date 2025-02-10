@@ -14,6 +14,7 @@
 #include "gb.h"
 
 
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
@@ -53,8 +54,6 @@ int main(int argc, char* argv[])
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
-    
 
     std::string vertexCode;
     std::string fragmentCode;
@@ -146,8 +145,8 @@ int main(int argc, char* argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;   
-    std::string rom = argc > 1 ? argv[1] : "res/testroms/dmg-acid2.gb";
-    gb.readRom(rom.c_str());
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/marioland.gb";
+    gb.readRom(rom);
 
     //JsonTest jsonTest(gb);
     //jsonTest.RunAllTests();
@@ -257,8 +256,6 @@ int main(int argc, char* argv[])
             }     
         }
     }
-
-    
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------

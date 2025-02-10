@@ -80,7 +80,6 @@ void PPU::reset()
 
 	windowPixelWasDrawn = false;
 
-
 	exittedDrawingMode = false;
 	firstHBlankCycle = true;
 	scanlineCycles = 0;
@@ -377,7 +376,7 @@ void PPU::tick()
 			for (int i = 0; i < spritesBuffer.size(); i++)
 			{
 				Sprite sprite = spritesBuffer[i];
-				if (sprite.xPos == LX)
+				if (sprite.xPos - 8 == scanlineDrawnPixels)
 				{
 					spriteBeingFetched = sprite;
 					spriteFetchEnabled = true;		
@@ -503,7 +502,6 @@ void PPU::tick()
 						if ((spPixelFIFO.size() < 8 && i >= spFIFOSizeBeforePush) && !transparentPixelOverlap)
 						{	
 
-							
 							spPixelFIFO.push_back(pixel);
 						}
 					}
@@ -515,7 +513,7 @@ void PPU::tick()
 					for (int i = 0; i < spritesBuffer.size(); i++)
 					{
 						Sprite sprite = spritesBuffer[i];
-						if (sprite.xPos == LX)
+						if (sprite.xPos - 8 == scanlineDrawnPixels)
 						{
 							spriteBeingFetched = sprite;
 							spriteFetchEnabled = true;
@@ -550,7 +548,12 @@ void PPU::tick()
 
 			if (pixelsToBeDiscarded > 0)
 			{
-				bgFetchBuffer.pop();
+				bgFetchBuffer.pop();	
+
+				if (!spPixelFIFO.empty())
+				{
+					spPixelFIFO.erase(spPixelFIFO.begin());
+				}
 				pixelsToBeDiscarded--;
 			}
 			else

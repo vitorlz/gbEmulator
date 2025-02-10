@@ -2,7 +2,6 @@
 #include <iostream>
 #include "mmu.h"
 
-
 uint8_t MMU::read8(uint16_t address)
 {
 
@@ -80,7 +79,6 @@ void MMU::write8(uint16_t address, uint8_t value)
 	{
 		std::cout << "attempting to write to rom"; // --> have to subtract starting memory position of array 
 	}
-
 	if (address >= 0x8000 && address <= 0x9FFF)
 	{
 		vRam[address - 0x8000] = value;
@@ -103,11 +101,7 @@ void MMU::write8(uint16_t address, uint8_t value)
 	}												
 	else if (address >= 0xFF00 && address <= 0xFF7F)
 	{
-		
-		
 		ioRegs[address - 0xFF00] = value;
-		
-		
 	}
 	else if (address >= 0xFF80 && address <= 0xFFFE)
 	{
@@ -118,8 +112,6 @@ void MMU::write8(uint16_t address, uint8_t value)
 		ie[address - 0xFFFF] = value;
 	}
 }
-
-
 
 void MMU::writeToRomMemory(uint16_t index, uint8_t value)
 {

@@ -19,6 +19,12 @@ enum Interrupt
 	JOYPAD
 };
 
+enum MBC
+{
+	MBC0,
+	MBC1
+};
+
 class MMU
 {
 public:
@@ -43,6 +49,7 @@ public:
 
 	// cpu will fetch the instruction 
 
+	MBC mbc;
 
 	// whenever read using pc increase pc --> read8(PC++)
 	uint8_t read8(uint16_t address);
