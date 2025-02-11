@@ -42,7 +42,6 @@ public:
 	
 	bool keyPressed[379];
 	bool keyDown[379];
-	std::vector<uint8_t> fullrom;
 
 	void enableInputRegisterBits(Button button);
 	void disableInputRegisterBits(Button button);

@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "gbEmulator", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;   
-    std::string rom = argc > 1 ? argv[1] : "res/testroms/marioland.gb";
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/pokemon.gb";
     gb.readRom(rom);
 
     //JsonTest jsonTest(gb);
@@ -244,10 +244,10 @@ int main(int argc, char* argv[])
 
             //lastTime = currentTime;
 
-            while ((glfwGetTime() - currentTime) < (1.0 / 73.5))
+            /*while ((glfwGetTime() - currentTime) < (1.0 / 73.5))
             {
                 continue;
-            }
+            }*/
 
             if (frameCount >= 60)
             {

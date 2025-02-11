@@ -1,5 +1,6 @@
 #pragma once 
 #include <cinttypes>
+#include <vector>
 
 #define DIV_ADDRESS 0xFF04
 #define TIMA_ADDRESS 0xFF05
@@ -7,8 +8,6 @@
 #define TAC_ADDRESS 0xFF07
 #define IF_ADDRESS 0xFF0F
 #define IE_ADDRESS 0xFFFF
-
-
 
 enum Interrupt
 {
@@ -22,7 +21,9 @@ enum Interrupt
 enum MBC
 {
 	MBC0,
-	MBC1
+	MBC1,
+	MBC1R,
+	MBC1RB,
 };
 
 class MMU
@@ -35,9 +36,12 @@ public:
 	// cartridge rom at pc = 0x100. At the beginning when pc is at 0x00 - 0x100 range read boot rom array. Once pc reaches 0x100 subsequent memory
 	// reads the cartridge array. Could probably be done with just a bool ex: if(pc == 0x0100 && !bootromDone) bootromDone = true
 	
-	uint8_t rom[0x8000]; // 16 KiB ROM bank 00 and 16 KiB ROM Bank 01–NN 
+	uint8_t rom0[0x4000]; // 16 KiB ROM bank 00 and 16 KiB ROM Bank 01–NN 
+
+	uint8_t romBanks[0x4000];
+
 	uint8_t vRam[0x2000]; // 8 KiB Video RAM (VRAM)
-	uint8_t eRam[0x2000]; // 8 KiB External RAM
+	std::vector<uint8_t> eRam; // --> external ram can have variable size depending on mbc
 	uint8_t wRam[0x2000]; // 8 KiB Work RAM(WRAM)
 
 	// 0xE000 - 0xFDFF --> echo ram just read from wram --> wRam[address - 0xE000]
@@ -47,9 +51,22 @@ public:
 	uint8_t hRam[0x007F]; // High RAM (HRAM)
 	uint8_t ie[0x0001]; // --> FFFF interrupt enable register (IE)
 
-	// cpu will fetch the instruction 
+	std::vector<uint8_t> fullrom;
 
 	MBC mbc;
+	
+	bool sRamEnabled = false;
+	
+	uint8_t romBankNumber = 1;
+	uint8_t ramBankNumber = 0;
+	uint8_t highBankNumber = 0;
+	uint8_t zeroBankNumber = 0;
+	bool modeFlag = 0;
+
+	unsigned int romNumOfBanks = 0;
+	unsigned int sRamSize = 0;
+	unsigned int sRamNumOfBanks = 0;
+	
 
 	// whenever read using pc increase pc --> read8(PC++)
 	uint8_t read8(uint16_t address);
@@ -71,4 +88,8 @@ public:
 	bool isInterruptRequested(Interrupt type);
 	// return true if the corresponding bit in IE is set
 	bool isInterruptEnabled(Interrupt type);
+
+	uint8_t getMBC1HighBankNumber();
+	
+	uint8_t getMBC1ZeroBankNumber();
 };

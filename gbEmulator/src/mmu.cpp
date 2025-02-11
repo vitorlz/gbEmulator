@@ -14,17 +14,80 @@ uint8_t MMU::read8(uint16_t address)
 
 	//return testArray[address];
 
-	if (address <= 0x7FFF) // --> 16 kib rom
+	if (address <= 0x3FFF) // --> 16 kib rom
 	{
-		return rom[address - 0x0000]; // --> have to subtract starting memory position of array 
+		if (mbc == MBC0)
+		{
+			return fullrom[address];
+		}
+		else if (mbc == MBC1)
+		{
+
+			if (modeFlag == 0)
+			{
+				return fullrom[address];
+			}
+			else
+			{
+				return fullrom[0x4000 * getMBC1ZeroBankNumber() + address];
+			}
+			
+		}
+		 // --> have to subtract starting memory position of array 
+	}
+	else if (address >= 0x4000 && address <= 0x7FFF)
+	{
+		if (mbc == MBC0)
+		{
+			return fullrom[address];
+		}
+		else if (mbc == MBC1)
+		{
+
+			//std::cout << "mbc1 high bank number: " << std::dec << (int)getMBC1HighBankNumber() << "\n";
+			return fullrom[0x4000 * getMBC1HighBankNumber() + (address - 0x4000)];
+		}
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF)
 	{
+
 		return vRam[address - 0x8000];
 	}
-	else if (address >= 0xA000 && address <= 0XBFFF)
+	else if (address >= 0xA000 && address <= 0xBFFF)
 	{
-		return eRam[address - 0xA000];
+		if (mbc == MBC0)
+		{
+			return eRam[address - 0xA000];
+		}
+		else if (mbc == MBC1)
+		{
+			if (sRamEnabled)
+			{
+				if (sRamSize == 0x800 || sRamSize == 0x2000)
+				{
+					return eRam[(address - 0xA000) % sRamSize];
+				}
+				else if (sRamSize == 0x8000)
+				{
+
+					if (modeFlag == 1)
+					{
+						return eRam[0x2000 * ramBankNumber + (address - 0xA000)];
+					}
+					else
+					{
+						return eRam[address - 0xA000];
+					}
+					
+				}
+			}
+			else
+			{
+				return 0xFF;
+			}
+			
+		}
+		
 	}
 	else if (address >= 0xC000 && address <= 0xDFFF)
 	{
@@ -75,17 +138,112 @@ void MMU::write8(uint16_t address, uint8_t value)
 	// usually games handle that and only do dma transfers during vblank
 	
 	//testArray[address] = value;
-	if (address <= 0x7FFF) // --> 16 kib rom
+	//if (address <= 0x7FFF) // --> 16 kib rom
+	//{
+	//	std::cout << "attempting to write to rom"; // --> have to subtract starting memory position of array 
+	//}
+
+	if (mbc == MBC1)
 	{
-		std::cout << "attempting to write to rom"; // --> have to subtract starting memory position of array 
+		if (address <= 0x1FFF)
+		{
+
+			if ((value & 15) == 10)
+			{
+				
+				sRamEnabled = true;
+			}
+			else
+			{
+				sRamEnabled = false;
+			}
+		}
+
+		if (address >= 0x2000 && address <= 0x3FFF)
+		{
+			// romBankNumber is a 5 bit register, it is never 0. If we try to write 0 to it we should write 1 instead.
+			// upper bits are ignored.
+			if ((value & 31) == 0)
+			{
+				romBankNumber = 1;
+			}
+			else
+			{
+				if (romNumOfBanks == 128 || romNumOfBanks == 64 || romNumOfBanks == 32)
+				{
+					romBankNumber = value & 31;
+				}
+				else if (romNumOfBanks == 16)
+				{
+					romBankNumber = value & 15;
+				}
+				else if (romNumOfBanks == 8)
+				{
+					romBankNumber = value & 7;
+				}
+				else if (romNumOfBanks == 4)
+				{
+					romBankNumber = value & 3;
+				}
+				else if (romNumOfBanks == 2)
+				{
+					romBankNumber = value & 1;
+				}
+			}
+			
+		}
+
+		if (address >= 0x4000 && address <= 0x5FFF)
+		{
+			ramBankNumber = value & 3;
+
+			//std::cout << "rambanknumber: " << std::dec << (int)ramBankNumber << "\n";
+		}
+
+		if (address >= 0x6000 && address <= 0x7FFF)
+		{
+			//std::cout << "toggling bank mode" << "\n";
+			modeFlag = value & 1;
+			//std::cout << "mode flag: " << modeFlag << "\n";
+		}
 	}
+
+
 	if (address >= 0x8000 && address <= 0x9FFF)
 	{
 		vRam[address - 0x8000] = value;
 	}
 	else if (address >= 0xA000 && address <= 0XBFFF)
 	{
-		eRam[address - 0xA000] = value;
+		if (mbc == MBC0)
+		{
+			eRam[address - 0xA000] = value;
+		}
+		else if (mbc == MBC1)
+		{
+			if (sRamEnabled)
+			{
+				if (sRamSize == 0x800 || sRamSize == 0x2000)
+				{
+					eRam[(address - 0xA000) % sRamSize] = value;
+				}
+				else if (sRamSize == 0x8000)
+				{
+
+					if (modeFlag == 1)
+					{
+						//std::cout << "rambanknumber when fetching from eram: " << std::dec << (int)ramBankNumber << "\n";
+						eRam[0x2000 * ramBankNumber + (address - 0xA000)] = value;
+					}
+					else
+					{
+						eRam[address - 0xA000] = value;
+					}
+
+				}
+			}
+		}
+		
 	}
 	else if (address >= 0xC000 && address <= 0xDFFF)
 	{
@@ -117,7 +275,14 @@ void MMU::writeToRomMemory(uint16_t index, uint8_t value)
 {
 	//testArray[index] = value;
 	// if testing use testArray
-	rom[index] = value;
+	if (index <= 0x3FFF) // --> 16 kib rom
+	{
+		rom0[index] = value; // --> have to subtract starting memory position of array 
+	}
+	else if (index >= 0x4000 && index <= 0x7FFF)
+	{
+		romBanks[index - 0x4000] = value;
+	}
 }
 
 void MMU::requestInterrupt(Interrupt type)
@@ -159,3 +324,60 @@ void MMU::dmaTransfer(unsigned int count)
 
 	//std::cout << "count " << count << "\n";
 }
+
+
+uint8_t MMU::getMBC1HighBankNumber()
+{
+	if (romNumOfBanks <= 32)
+	{
+		if (romNumOfBanks == 32)
+		{
+			highBankNumber = romBankNumber & 31;
+		}
+		else if (romNumOfBanks == 16)
+		{
+			highBankNumber = romBankNumber & 15;
+		}
+		else if (romNumOfBanks == 8)
+		{
+			highBankNumber = romBankNumber & 7;
+		}
+		else if (romNumOfBanks == 4)
+		{
+			highBankNumber = romBankNumber & 3;
+		}
+		else if (romNumOfBanks == 2)
+		{
+			highBankNumber = romBankNumber & 1;
+		}
+	}
+	else if (romNumOfBanks == 64)
+	{
+		highBankNumber = (romBankNumber & 31) | ((ramBankNumber & 1) << 5);
+	}
+	else if (romNumOfBanks == 128)
+	{
+		highBankNumber = (romBankNumber & 31) | ((ramBankNumber & 3) << 5);
+	}
+
+	return highBankNumber;
+}
+
+uint8_t MMU::getMBC1ZeroBankNumber()
+{
+	if (romNumOfBanks <= 32)
+	{
+		zeroBankNumber = 0;
+	}
+	else if (romNumOfBanks == 64)
+	{
+		zeroBankNumber = zeroBankNumber | ((ramBankNumber & 1) << 5);
+	}
+	else if (romNumOfBanks == 128)
+	{
+		zeroBankNumber = zeroBankNumber | ((ramBankNumber & 3) << 5);
+	}
+
+	return zeroBankNumber;
+}
+
