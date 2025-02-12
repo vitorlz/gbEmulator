@@ -145,12 +145,13 @@ int main(int argc, char* argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;   
-    std::string rom = argc > 1 ? argv[1] : "res/testroms/pokemonsilver.gbc";
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/zelda.gb";
     gb.readRom(rom);
 
     //JsonTest jsonTest(gb);
     //jsonTest.RunAllTests();
 
+         
     glfwSwapInterval(0);
 
     double lastTime = 0;

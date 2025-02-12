@@ -78,6 +78,33 @@ void GameBoy::readRom(const std::string rom)
             std::cout << "MBC3+RAM+BATTERY" << "\n";
             mmu.mbc = MBC3;
             break;
+        case 0x19:
+            std::cout << "MBC5" << "\n";
+            mmu.mbc = MBC5;
+            break;
+        case 0x1A:
+            std::cout << "MBC5+RAM" << "\n";
+            mmu.mbc = MBC5;
+            break;
+        case 0x1B:
+            std::cout << "MBC5+RAM+BATTERY" << "\n";
+            mmu.mbc = MBC5;
+            break;
+        case 0x1C:
+            std::cout << "MBC5+RUMBLE" << "\n";
+            mmu.cartridgeHasRumble = true;
+            mmu.mbc = MBC5;
+            break;
+        case 0x1D:
+            std::cout << "MBC5+RUMBLE+RAM" << "\n";
+            mmu.cartridgeHasRumble = true;
+            mmu.mbc = MBC5;
+            break;
+        case 0x1E:
+            std::cout << "MBC5+RUMBLE+RAM+BATTERY" << "\n";
+            mmu.cartridgeHasRumble = true;
+            mmu.mbc = MBC5;
+            break;
         }
 
         std::cout << "Rom size: ";

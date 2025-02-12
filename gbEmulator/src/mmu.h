@@ -68,6 +68,9 @@ public:
 	uint8_t mappedRTCRegister = 0;
 
 	bool cartridgeHasRTC = false;
+	bool cartridgeHasRumble = false;
+
+	bool rumbleEnabled = false;
 
 	unsigned int rtcCycleCounter = 0;
 

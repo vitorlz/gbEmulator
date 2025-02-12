@@ -37,7 +37,11 @@ uint8_t MMU::read8(uint16_t address)
 		{
 			return fullrom[address];
 		}
-		 // --> have to subtract starting memory position of array 
+		else if (mbc == MBC5)
+		{
+			return fullrom[address];
+		}
+		 
 	}
 	else if (address >= 0x4000 && address <= 0x7FFF)
 	{
@@ -51,6 +55,10 @@ uint8_t MMU::read8(uint16_t address)
 			return fullrom[0x4000 * getMBC1HighBankNumber() + (address - 0x4000)];
 		}
 		else if (mbc == MBC3)
+		{
+			return fullrom[0x4000 * romBankNumber + (address - 0x4000)];
+		}
+		else if (mbc == MBC5)
 		{
 			return fullrom[0x4000 * romBankNumber + (address - 0x4000)];
 		}
@@ -124,11 +132,19 @@ uint8_t MMU::read8(uint16_t address)
 				else if (mappedRTCRegister == 0x0C)
 				{
 					return rtcLatched.dh;
-				}
-				
+				}	
 			}
-
-			
+		}
+		else if (mbc == MBC5)
+		{
+			if (sRamEnabled)
+			{
+				return eRam[0x2000 * ramBankNumber + (address - 0xA000)];
+			}
+			else
+			{
+				return 0xFF;
+			}
 		}
 	}
 	else if (address >= 0xC000 && address <= 0xDFFF)
@@ -325,6 +341,50 @@ void MMU::write8(uint16_t address, uint8_t value)
 			lastLatchWrite = value;
 		}
 	}
+	else if (mbc == MBC5)
+	{
+		if (address <= 0x1FFF)
+		{
+			if ((value & 15) == 10)
+			{
+				sRamEnabled = true;
+			}
+			else
+			{
+				sRamEnabled = false;
+			}
+		}
+
+		if (address >= 0x2000 && address <= 0x2FFF)
+		{
+			romBankNumber = (romBankNumber & ~(0xFF)) | value;
+		}
+
+		if (address >= 0x3000 && address <= 0x3FFF)
+		{
+			romBankNumber = (romBankNumber & ~(1 << 8)) | ((value & 1) << 8);
+		}
+
+		if (address >= 0x4000 && address <= 0x5FFF)
+		{
+
+			if (cartridgeHasRumble)
+			{
+				rumbleEnabled = (value >> 3) & 1;
+
+				value = value & 0b11110111;
+
+				ramBankNumber = value;
+			}
+			else
+			{
+				ramBankNumber = value;
+			}
+			
+		}
+
+		
+	}
 
 	if (address >= 0x8000 && address <= 0x9FFF)
 	{
@@ -402,10 +462,14 @@ void MMU::write8(uint16_t address, uint8_t value)
 					eRam[0x2000 * ramBankNumber + (address - 0xA000)] = value;
 				}
 			}
-			
-				
-			// if an rtc register is mapped to this memory region, writing to this memory region will write to the mapped register.
-			
+		}
+		else if (mbc == MBC5)
+		{
+
+			if (sRamEnabled)
+			{
+				eRam[0x2000 * ramBankNumber + (address - 0xA000)] = value;
+			}
 		}
 		
 	}
