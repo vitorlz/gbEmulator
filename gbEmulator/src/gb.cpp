@@ -49,12 +49,34 @@ void GameBoy::readRom(const std::string rom)
             mmu.mbc = MBC1;
             break;
         case 0x02:
-            std::cout << "MBC1 + RAM" << "\n";
+            std::cout << "MBC1+RAM" << "\n";
             mmu.mbc = MBC1;
             break;
         case 0x03:
-            std::cout << "MBC1 + RAM + BATTERY" << "\n";
+            std::cout << "MBC1+RAM+BATTERY" << "\n";
             mmu.mbc = MBC1;
+            break;
+        case 0x0F:
+            std::cout << "MBC3+TIMER+BATTERY" << "\n";
+            mmu.mbc = MBC3;
+            mmu.cartridgeHasRTC = true;
+            break;
+        case 0x10:
+            std::cout << "MBC3+TIMER+RAM+BATTERY" << "\n";
+            mmu.cartridgeHasRTC = true;
+            mmu.mbc = MBC3;
+            break;
+        case 0x11:
+            std::cout << "MBC3" << "\n";
+            mmu.mbc = MBC3;
+            break;
+        case 0x12:
+            std::cout << "MBC3+RAM" << "\n";
+            mmu.mbc = MBC3;
+            break;
+        case 0x13:
+            std::cout << "MBC3+RAM+BATTERY" << "\n";
+            mmu.mbc = MBC3;
             break;
         }
 

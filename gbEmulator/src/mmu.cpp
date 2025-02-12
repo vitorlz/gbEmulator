@@ -33,6 +33,10 @@ uint8_t MMU::read8(uint16_t address)
 			}
 			
 		}
+		else if (mbc == MBC3)
+		{
+			return fullrom[address];
+		}
 		 // --> have to subtract starting memory position of array 
 	}
 	else if (address >= 0x4000 && address <= 0x7FFF)
@@ -43,9 +47,12 @@ uint8_t MMU::read8(uint16_t address)
 		}
 		else if (mbc == MBC1)
 		{
-
 			//std::cout << "mbc1 high bank number: " << std::dec << (int)getMBC1HighBankNumber() << "\n";
 			return fullrom[0x4000 * getMBC1HighBankNumber() + (address - 0x4000)];
+		}
+		else if (mbc == MBC3)
+		{
+			return fullrom[0x4000 * romBankNumber + (address - 0x4000)];
 		}
 	}
 	else if (address >= 0x8000 && address <= 0x9FFF)
@@ -84,10 +91,45 @@ uint8_t MMU::read8(uint16_t address)
 			else
 			{
 				return 0xFF;
+			}	
+		}
+		else if (mbc == MBC3)
+		{
+			if (sRamEnabled)
+			{
+				if (!mappedRTCRegister)
+				{
+					return eRam[0x2000 * ramBankNumber + (address - 0xA000)];
+				}	
+				else if (!latchOccurred)
+				{
+					return 0xFF;
+				}
+				else if (mappedRTCRegister == 0x08)
+				{
+					return rtcLatched.s;
+				}
+				else if (mappedRTCRegister == 0x09)
+				{
+					return rtcLatched.m;
+				}
+				else if (mappedRTCRegister == 0x0A)
+				{
+					return rtcLatched.h;
+				}
+				else if (mappedRTCRegister == 0x0B)
+				{
+					return rtcLatched.dl;
+				}
+				else if (mappedRTCRegister == 0x0C)
+				{
+					return rtcLatched.dh;
+				}
+				
 			}
+
 			
 		}
-		
 	}
 	else if (address >= 0xC000 && address <= 0xDFFF)
 	{
@@ -207,7 +249,82 @@ void MMU::write8(uint16_t address, uint8_t value)
 			//std::cout << "mode flag: " << modeFlag << "\n";
 		}
 	}
+	else if (mbc == MBC3)
+	{
+		if (address <= 0x1FFF)
+		{
+			// should also enable access to the RTC registers
 
+			if ((value & 15) == 10)
+			{
+
+				sRamEnabled = true;
+			}
+			else
+			{
+				sRamEnabled = false;
+			}
+		}
+
+		if (address >= 0x2000 && address <= 0x3FFF)
+		{
+			// romBankNumber is a 7 bit register in MBC3, it is never 0. If we try to write 0 to it we should write 1 instead.
+			// upper bits are ignored.
+
+			if ((value & 127) == 0)
+			{
+				romBankNumber = 1;
+			}
+			else
+			{
+				romBankNumber = value & 127;
+				//std::cout << "rombank number: " << std::dec << (int)romBankNumber << "\n";
+			}
+
+		}
+
+		if (address >= 0x4000 && address <= 0x5FFF)
+		{
+
+			// if the value is between 0 and 3, set the ram bank value
+			if (value >= 0x00 && value <= 0x03)
+			{
+				ramBankNumber = value & 3;
+
+				//std::cout << "ram bank number: " << std::dec << (int)ramBankNumber << "\n";
+				mappedRTCRegister = 0;
+			}
+			else if (value >= 0x08 && value <= 0x0C)
+			{
+				// the corresponding RTC register is mapped to the external ram region
+				mappedRTCRegister = value;
+
+				//std::cout << "mapped RTC register: " << std::dec << (int)mappedRTCRegister << "\n";
+				
+			}
+		}
+
+		if (address >= 0x6000 && address <= 0x7FFF)
+		{
+			// write of value 0x00 followed by another write with the value 0x01 will copy the current state of the RTC registers and make them accessible
+			// using the RTC register select feature.
+		
+			if (lastLatchWrite == 0x00 && value == 0x01)
+			{
+				rtcLatched.s = rtc.s;
+				rtcLatched.m = rtc.m;
+				rtcLatched.h = rtc.h;
+				rtcLatched.dl = rtc.dl;
+				rtcLatched.dh = rtc.dh;
+
+				rtc.rtcDayCounter = ((rtc.dh & 1) << 8) | rtc.dl;
+
+				latchOccurred = true;
+			}
+
+			lastLatchWrite = value;
+		}
+	}
 
 	if (address >= 0x8000 && address <= 0x9FFF)
 	{
@@ -242,6 +359,53 @@ void MMU::write8(uint16_t address, uint8_t value)
 
 				}
 			}
+		}
+		else if (mbc == MBC3)
+		{
+
+			if (sRamEnabled)
+			{
+				// external ram mapped to this memory region
+
+				if (mappedRTCRegister == 0x08)
+				{
+					rtc.s = 0b00111111 & value;
+					rtcLatched.s = 0b00111111 & value;
+
+					// reset subsecond counter after a write to RTC S
+					rtcCycleCounter = 0;
+				}
+				else if (mappedRTCRegister == 0x09)
+				{
+					rtc.m = 0b00111111 & value;
+					rtcLatched.m = 0b00111111 & value;
+				}
+				else if (mappedRTCRegister == 0x0A)
+				{
+					rtc.h = 0b00011111 & value;
+					rtcLatched.h = 0b00011111 & value;
+				}
+				else if (mappedRTCRegister == 0x0B)
+				{
+					rtc.dl = 0b11111111 & value;
+					rtcLatched.dl = 0b11111111 & value;
+
+
+				}
+				else if (mappedRTCRegister == 0x0C)
+				{
+					rtc.dh = 0b11000001 & value;
+					rtcLatched.dh = 0b11000001 & value;
+				}
+				else
+				{
+					eRam[0x2000 * ramBankNumber + (address - 0xA000)] = value;
+				}
+			}
+			
+				
+			// if an rtc register is mapped to this memory region, writing to this memory region will write to the mapped register.
+			
 		}
 		
 	}

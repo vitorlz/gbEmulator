@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GameBoy gb;   
-    std::string rom = argc > 1 ? argv[1] : "res/testroms/pokemon.gb";
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/pokemonsilver.gbc";
     gb.readRom(rom);
 
     //JsonTest jsonTest(gb);
@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
 
             //lastTime = currentTime;
 
-            /*while ((glfwGetTime() - currentTime) < (1.0 / 73.5))
+           /* while ((glfwGetTime() - currentTime) < (1.0 / 73.5))
             {
                 continue;
             }*/

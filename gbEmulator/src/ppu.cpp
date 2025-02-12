@@ -103,18 +103,49 @@ void PPU::setMode(MODE mode)
 
 void PPU::tick()
 {
+	if (!isDisplayEnabled() && !displayDisabled && displayWasEnabledBefore)
+	{
+		reset();
+		mmu.write8(STAT_ADDRESS, 0x00);
+		displayDisabled = true;
+
+		std::cout << "display disabled" << "\n";
+	}
+
+	if (displayDisabled && isDisplayEnabled())
+	{
+		std::cout << "display reenabled" << "\n";
+		displayDisabled = false;
+		setMode(OAM_SCAN_2);
+	}
+
+	if (displayDisabled)
+	{
+		return;
+	}
+
+	displayWasEnabledBefore = isDisplayEnabled();
+
+	//std::cout << "display enabled: " << isDisplayEnabled() << "\n";
+
+	static int totalCycles = 0;
+
+	
 	scanlineCycles++;
 	
-	// Check for LYC == LY interrupt
 	lycEqualLy = checkLycEqualLy() ? 1 : 0;
 	setSTATCoincidenceFlag(lycEqualLy);
+	// Check for LYC == LY interrupt
+	
 
 	if (ppuMode == VBLANK_1)
 	{
 		if (getLY() == 154)
 		{
 			ppuMode = OAM_SCAN_2;
-			setLY(0);	
+			setLY(0);
+
+			/*std::cout << "display enabled: " << isDisplayEnabled()*/
 		}
 		windowLineCounter = 0;
 		wyEqualLyThisFrame = false;
@@ -669,6 +700,8 @@ void PPU::tick()
 		}
 	}
 
+	
+
 	if (scanlineCycles >= 456)
 	{
 		setLY(getLY() + 1);
@@ -680,13 +713,18 @@ void PPU::tick()
 		exittedDrawingMode = false;
 		firstHBlankCycle = true;
 		scanlineCycles = 0;
+
+		//std::cout << "LY: " << std::dec << (int)getLY() << "\n";
 	}
 
-	if (getLY() == 144)
+	if (getLY() == 144 && ppuMode != VBLANK_1)
 	{
+		totalCycles = 0;
 		setMode(VBLANK_1);
 		mmu.requestInterrupt(VBLANK);
 	}
+
+	totalCycles++;
 
 	statInterruptCheck();
 }

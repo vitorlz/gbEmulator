@@ -22,8 +22,8 @@ enum MBC
 {
 	MBC0,
 	MBC1,
-	MBC1R,
-	MBC1RB,
+	MBC3,
+	MBC5
 };
 
 class MMU
@@ -57,16 +57,52 @@ public:
 	
 	bool sRamEnabled = false;
 	
-	uint8_t romBankNumber = 1;
+	uint16_t romBankNumber = 1;
 	uint8_t ramBankNumber = 0;
-	uint8_t highBankNumber = 0;
-	uint8_t zeroBankNumber = 0;
+	uint16_t highBankNumber = 0;
+	uint16_t zeroBankNumber = 0;
 	bool modeFlag = 0;
+
+	//bool rtcRegisterEnabled = false;
+
+	uint8_t mappedRTCRegister = 0;
+
+	bool cartridgeHasRTC = false;
+
+	unsigned int rtcCycleCounter = 0;
 
 	unsigned int romNumOfBanks = 0;
 	unsigned int sRamSize = 0;
 	unsigned int sRamNumOfBanks = 0;
-	
+
+	uint8_t lastLatchWrite = 0;
+
+	struct RTC
+	{
+		// 6 bit seconds
+		uint8_t s = 0;
+		// 6 bit minutes
+		uint8_t m = 0;
+		// 5 bit hours
+		uint8_t h = 0;
+		// 8 bit --> lower 8 bits of rhte total 9-bit day counter
+		uint8_t dl = 0;
+		// bit 0 --> bit 8 of the day counter | bit 6 --> timer halt bit | bit 7 --> day counter carry bit
+		uint8_t dh = 0;
+		// whole 9-bit rtc day counter;
+		uint16_t rtcDayCounter = 0;
+	} rtc;
+
+	struct RTClatched
+	{
+		uint8_t s = 0;
+		uint8_t m = 0;
+		uint8_t h = 0;
+		uint8_t dl = 0;
+		uint8_t dh = 0;
+	} rtcLatched;
+
+	bool latchOccurred = false;
 
 	// whenever read using pc increase pc --> read8(PC++)
 	uint8_t read8(uint16_t address);

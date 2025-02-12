@@ -119,7 +119,11 @@ public:
 	uint8_t spFetchFirstByte;
 	uint8_t spFetchSecondByte;
 
+	bool displayDisabled = false;
+
 	void setMode(MODE mode);
+
+	bool displayWasEnabledBefore = false;
 
 	bool lycEqualLy = false;
 	bool fetchingWindow = false;

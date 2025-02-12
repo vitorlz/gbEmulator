@@ -222,7 +222,6 @@ void CPU::handleInterrupts()
 
 void CPU::write8(uint16_t address, uint8_t value)
 {
-
 	if (address == DIV_ADDRESS)
 	{
 		value = 0x00;
@@ -279,7 +278,53 @@ void CPU::write16(uint16_t address, uint16_t value)
 }
 
 void CPU::AddCycle()
-{	
+{
+	if (mmu.cartridgeHasRTC && !(mmu.rtc.dh >> 6 & 1))
+	{
+		mmu.rtcCycleCounter += 4;
+
+		//std::cout << mmu.rtcCycleCounter << "\n";
+
+		if (mmu.rtcCycleCounter == 4194304)
+		{
+			mmu.rtc.s++;
+
+			if (mmu.rtc.s == 60)
+			{
+				mmu.rtc.s = 0;
+				mmu.rtc.m++;
+				if (mmu.rtc.m == 60)
+				{
+					mmu.rtc.m = 0;
+					mmu.rtc.h++;
+					if (mmu.rtc.h == 24)
+					{
+						mmu.rtc.h = 0;
+
+						mmu.rtc.rtcDayCounter++;
+
+						mmu.rtc.dl = mmu.rtc.rtcDayCounter & 0xFF;
+
+						mmu.rtc.dh = (mmu.rtc.dh & ~1) | ((mmu.rtc.rtcDayCounter >> 8) & 1);
+
+						if (mmu.rtc.rtcDayCounter > 511)
+						{
+
+							//std::cout << "flag set" << "\n";
+							mmu.rtc.rtcDayCounter = 0;
+							mmu.rtc.dh = mmu.rtc.dh | (1 << 7);
+						}
+						
+					}
+				}
+			}
+
+			//std::cout << "RTC hours: " << std::dec << "days: " << (int)mmu.rtc.rtcDayCounter << (int)mmu.rtc.h << " minutes: " << (int)mmu.rtc.m << " seconds: " << (int)mmu.rtc.s;
+
+			mmu.rtcCycleCounter = 0;
+		}
+
+	}
 
 	if (mmu.dmaTransferRequested)
 	{
@@ -318,10 +363,9 @@ void CPU::AddCycle()
 	{
 		tCycles++;
 
-		if (true)
-		{	
-			ppu.tick();
-		}
+			
+		ppu.tick();
+		
 		
 		DIV++;
 
