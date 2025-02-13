@@ -33,7 +33,7 @@
     <ClCompile Include="src\ppu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\JsonTest.cpp">
+    <ClCompile Include="src\jsonTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -50,12 +50,19 @@
     <ClInclude Include="src\ppu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\JsonTest.h">
+    <ClInclude Include="src\jsonTest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\regs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\pixel.vert" />
     <None Include="res\shaders\pixel.frag" />
+    <None Include="cmake\Findglfw3.cmake" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
 </Project>

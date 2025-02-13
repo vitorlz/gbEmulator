@@ -403,3 +403,19 @@ FodyWeavers.xsd
 **/testroms/
 **/roms/
 **/jsonTests/
+
+# CMake build directory (if inside the project)
+**/build/
+
+# CMake-generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CMakeUserPresets.json
+
+# Visual Studio CMake-specific files
+CMakeLists.txt.user
+
+# CMake FetchContent dependency folders
+_deps/

@@ -5,7 +5,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "JsonTest.h"
+#include "jsonTest.h"
 
 
 
@@ -57,14 +57,14 @@ void JsonTest::RunTest(const std::string path)
 		{
 			gb.cpu.PC = test["initial"]["pc"];
 			gb.cpu.SP = test["initial"]["sp"];
-			gb.cpu.regs[A] = test["initial"]["a"];
-			gb.cpu.regs[B] = test["initial"]["b"];
-			gb.cpu.regs[C] = test["initial"]["c"];
-			gb.cpu.regs[D] = test["initial"]["d"];
-			gb.cpu.regs[E] = test["initial"]["e"];
-			gb.cpu.regs[F] = test["initial"]["f"];
-			gb.cpu.regs[H] = test["initial"]["h"];
-			gb.cpu.regs[L] = test["initial"]["l"];
+			gb.cpu.regs[REG_A] = test["initial"]["a"];
+			gb.cpu.regs[REG_B] = test["initial"]["b"];
+			gb.cpu.regs[REG_C] = test["initial"]["c"];
+			gb.cpu.regs[REG_D] = test["initial"]["d"];
+			gb.cpu.regs[REG_E] = test["initial"]["e"];
+			gb.cpu.regs[REG_F] = test["initial"]["f"];
+			gb.cpu.regs[REG_H] = test["initial"]["h"];
+			gb.cpu.regs[REG_L] = test["initial"]["l"];
 
 			int ime = test["initial"]["ime"];
 
@@ -91,14 +91,14 @@ void JsonTest::RunTest(const std::string path)
 
 			cpuPass = (gb.cpu.PC == test["final"]["pc"]) *
 				(gb.cpu.SP == test["final"]["sp"]) *
-				(gb.cpu.regs[A] == test["final"]["a"]) *
-				(gb.cpu.regs[B] == test["final"]["b"]) *
-				(gb.cpu.regs[C] == test["final"]["c"]) *
-				(gb.cpu.regs[D] == test["final"]["d"]) *
-				(gb.cpu.regs[E] == test["final"]["e"]) *
-				(gb.cpu.regs[F] == test["final"]["f"]) *
-				(gb.cpu.regs[H] == test["final"]["h"]) *
-				(gb.cpu.regs[L] == test["final"]["l"]) *
+				(gb.cpu.regs[REG_A] == test["final"]["a"]) *
+				(gb.cpu.regs[REG_B] == test["final"]["b"]) *
+				(gb.cpu.regs[REG_C] == test["final"]["c"]) *
+				(gb.cpu.regs[REG_D] == test["final"]["d"]) *
+				(gb.cpu.regs[REG_E] == test["final"]["e"]) *
+				(gb.cpu.regs[REG_F] == test["final"]["f"]) *
+				(gb.cpu.regs[REG_H] == test["final"]["h"]) *
+				(gb.cpu.regs[REG_L] == test["final"]["l"]) *
 				(gb.cpu.IME == (bool)ime);
 
 			if (test["final"].contains("ei"))
@@ -129,14 +129,14 @@ void JsonTest::RunTest(const std::string path)
 				std::cout << "YOUR RESULT:         "
 					<< "PC: " << std::dec << (int)gb.cpu.PC << " "
 					<< "SP: " << std::dec << (int)gb.cpu.SP << " "
-					<< "A: " << std::dec << (int)gb.cpu.regs[A] << " "
-					<< "B: " << std::dec << (int)gb.cpu.regs[B] << " "
-					<< "C: " << std::dec << (int)gb.cpu.regs[C] << " "
-					<< "D: " << std::dec << (int)gb.cpu.regs[D] << " "
-					<< "E: " << std::dec << (int)gb.cpu.regs[E] << " "
-					<< "F: " << std::dec << (int)gb.cpu.regs[F] << " "
-					<< "H: " << std::dec << (int)gb.cpu.regs[H] << " "
-					<< "L: " << std::dec << (int)gb.cpu.regs[L] << " "
+					<< "A: " << std::dec << (int)gb.cpu.regs[REG_A] << " "
+					<< "B: " << std::dec << (int)gb.cpu.regs[REG_B] << " "
+					<< "C: " << std::dec << (int)gb.cpu.regs[REG_C] << " "
+					<< "D: " << std::dec << (int)gb.cpu.regs[REG_D] << " "
+					<< "E: " << std::dec << (int)gb.cpu.regs[REG_E] << " "
+					<< "F: " << std::dec << (int)gb.cpu.regs[REG_F] << " "
+					<< "H: " << std::dec << (int)gb.cpu.regs[REG_H] << " "
+					<< "L: " << std::dec << (int)gb.cpu.regs[REG_L] << " "
 					<< "IME: " << std::dec << (int)gb.cpu.IME << " "
 					<< "IE: " << std::dec << (int)gb.mmu.testArray[0xFFFF] << " "
 					<< "\n";

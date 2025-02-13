@@ -3,17 +3,10 @@
 #include <limits>
 #include <chrono>
 #include <thread>
-
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-
-#include "JsonTest.h"
-
 #include "gb.h"
-
-
+#include  "regs.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void window_close_callback(GLFWwindow* window);
@@ -97,10 +90,10 @@ int main(int argc, char* argv[])
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
+    gb.ppu.shaderProgram = glCreateProgram();
+    glAttachShader(gb.ppu.shaderProgram, vertexShader);
+    glAttachShader(gb.ppu.shaderProgram, fragmentShader);
+    glLinkProgram(gb.ppu.shaderProgram);
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -115,11 +108,12 @@ int main(int argc, char* argv[])
            1.0f, -1.0f,  1.0f, 0.0f,
            1.0f,  1.0f,  1.0f, 1.0f
     };
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
+   
+    unsigned int VBO;
+    glGenVertexArrays(1, &gb.ppu.VAO);
     glGenBuffers(1, &VBO);
 
-    glBindVertexArray(VAO);
+    glBindVertexArray(gb.ppu.VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -136,10 +130,10 @@ int main(int argc, char* argv[])
     
     // create 160 * 144 texture for display buffer
 
-    unsigned int displayTexture;
+    
 
-    glGenTextures(1, &displayTexture);
-    glBindTexture(GL_TEXTURE_2D, displayTexture);
+    glGenTextures(1, &gb.ppu.displayTexture);
+    glBindTexture(GL_TEXTURE_2D, gb.ppu.displayTexture);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 160, 144, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
@@ -149,11 +143,8 @@ int main(int argc, char* argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     
-    std::string rom = argc > 1 ? argv[1] : "res/testroms/prehistorikman.gb";
+    std::string rom = argc > 1 ? argv[1] : "C:/dev/gbEmulator/gbEmulator/res/testroms/zelda.gb";
     gb.readRom(rom);
-
-    //JsonTest jsonTest(gb);
-    //jsonTest.RunAllTests();
 
     glfwSwapInterval(0);
 
@@ -179,8 +170,8 @@ int main(int argc, char* argv[])
             {
                 std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
                 std::cout << "STAT: " << std::hex << (int)gb.mmu.read8(0xFF41) << "\n";
-                std::cout << "E REG: " << std::hex << (int)gb.cpu.regs[A] << "\n";
-                std::cout << "A REG: " << std::hex << (int)gb.cpu.regs[A] << "\n";
+                std::cout << "E REG: " << std::hex << (int)gb.cpu.regs[REG_A] << "\n";
+                std::cout << "A REG: " << std::hex << (int)gb.cpu.regs[REG_A] << "\n";
                 std::cout << "Z FLAG: " << gb.cpu.getFlagZ() << "\n";
                 std::cout << "PPU STATE: " << gb.ppu.isDisplayEnabled() << "\n";
             }
@@ -205,6 +196,7 @@ int main(int argc, char* argv[])
 
         if (gb.cpu.tCycles >= 70224)
         {
+
             processInput(window);
             for (int i = 32; i < 349; i++)
             {
@@ -237,16 +229,10 @@ int main(int argc, char* argv[])
                 std::cout << "DONE" << "\n";
             }
 
-            glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
+           
 
             // fill 160x144 texture with display data and draw screen quad
-            glUseProgram(shaderProgram);
-            glBindTexture(GL_TEXTURE_2D, displayTexture);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RED, GL_UNSIGNED_BYTE, &gb.ppu.LCD[0]);
-
-            glBindVertexArray(VAO);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            
 
             static int frameCount = 0;
 
@@ -274,9 +260,9 @@ int main(int argc, char* argv[])
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &gb.ppu.VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
+    glDeleteProgram(gb.ppu.shaderProgram);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------

@@ -90,7 +90,7 @@
   <ItemGroup>
     <ClCompile Include="src\cpu.cpp" />
     <ClCompile Include="src\gb.cpp" />
-    <ClCompile Include="src\JsonTest.cpp" />
+    <ClCompile Include="src\jsonTest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mmu.cpp" />
     <ClCompile Include="src\ppu.cpp" />
@@ -99,13 +99,18 @@
   <ItemGroup>
     <ClInclude Include="src\cpu.h" />
     <ClInclude Include="src\gb.h" />
-    <ClInclude Include="src\JsonTest.h" />
+    <ClInclude Include="src\jsonTest.h" />
     <ClInclude Include="src\mmu.h" />
     <ClInclude Include="src\ppu.h" />
+    <ClInclude Include="src\regs.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\pixel.frag" />
     <None Include="res\shaders\pixel.vert" />
+    <None Include="cmake\Findglfw3.cmake" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

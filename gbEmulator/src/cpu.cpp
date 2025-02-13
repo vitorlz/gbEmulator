@@ -1,17 +1,7 @@
 #include <vector>
 #include "cpu.h"
 #include "iostream"
-
-
-#define B 0
-#define C 1
-#define D 2
-#define E 3
-#define H 4
-#define L 5
-#define F 6
-#define A 7
-
+#include  "regs.h"
 
 CPU::CPU(MMU& mmu, PPU& ppu) 
 	: mmu(mmu),
@@ -20,80 +10,80 @@ CPU::CPU(MMU& mmu, PPU& ppu)
 
 void CPU::setAF(uint16_t value)
 {
-	regs[A] = value >> 8;
-	regs[F] = value & 0xFF;
+	regs[REG_A] = value >> 8;
+	regs[REG_F] = value & 0xFF;
 }
 
 void CPU::setBC(uint16_t value)
 {
-	regs[B] = value >> 8;
-	regs[C] = value & 0xFF;
+	regs[REG_B] = value >> 8;
+	regs[REG_C] = value & 0xFF;
 }
 
 void CPU::setDE(uint16_t value)
 {
-	regs[D] = value >> 8;
-	regs[E] = value & 0xFF;
+	regs[REG_D] = value >> 8;
+	regs[REG_E] = value & 0xFF;
 }
 
 void CPU::setHL(uint16_t value)
 {
-	regs[H] = value >> 8;
-	regs[L] = value & 0xFF;
+	regs[REG_H] = value >> 8;
+	regs[REG_L] = value & 0xFF;
 }
 
 uint16_t CPU::getAF()
 {
-	return (regs[A] << 8) | regs[F];
+	return (regs[REG_A] << 8) | regs[REG_F];
 }
 uint16_t CPU::getBC()
 {
-	return (regs[B] << 8) | regs[C];
+	return (regs[REG_B] << 8) | regs[REG_C];
 }
 uint16_t CPU::getDE()
 {
-	return (regs[D] << 8) | regs[E];
+	return (regs[REG_D] << 8) | regs[REG_E];
 }
 
 uint16_t CPU::getHL()
 {
-	return (regs[H] << 8) | regs[L];
+	return (regs[REG_H] << 8) | regs[REG_L];
 }
 
 void CPU::setFlagZ(bool value)
 {
 
 	/*std::cout << "SET FLAG VALUE: " << (int)value << "\n";*/
-	regs[F] = (regs[F] & ~(1 << 7)) | (value << 7);
+	regs[REG_F] = (regs[REG_F] & ~(1 << 7)) | (value << 7);
 }
 void CPU::setFlagN(bool value)
 {
-	regs[F] = (regs[F] & ~(1 << 6)) | (value << 6);
+	regs[REG_F] = (regs[REG_F] & ~(1 << 6)) | (value << 6);
 }
 void CPU::setFlagH(bool value)
 {
-	regs[F] = (regs[F] & ~(1 << 5)) | (value << 5);
+	regs[REG_F] = (regs[REG_F] & ~(1 << 5)) | (value << 5);
 }
 void CPU::setFlagC(bool value)
 {
-	regs[F] = (regs[F] & ~(1 << 4)) | (value << 4);
+	regs[REG_F] = (regs[REG_F] & ~(1 << 4)) | (value << 4);
 }
 
 bool CPU::getFlagZ()
 {
-	return regs[F] >> 7;
+	return regs[REG_F] >> 7;
 }
 bool CPU::getFlagN()
 {
-	return regs[F] >> 6 & 0x01;
+	return regs[REG_F] >> 6 & 0x01;
 }
 bool CPU::getFlagH()
 {
-	return regs[F] >> 5 & 0x01;
+	return regs[REG_F] >> 5 & 0x01;
 }
 bool CPU::getFlagC()
 {
-	return regs[F] >> 4 & 0x01;
+	return regs[REG_F] >> 4 & 0x01;
 }
 
 uint8_t CPU::read8(uint16_t address)
@@ -614,21 +604,21 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			{
 				case 0:
 				{
-					write8(getBC(), regs[A]);
+					write8(getBC(), regs[REG_A]);
 
 					break;
 				}
 
 				case 1:
 				{
-					write8(getDE(), regs[A]);
+					write8(getDE(), regs[REG_A]);
 
 					break;
 				}
 
 				case 2:
 				{
-					write8(getHL(), regs[A]);
+					write8(getHL(), regs[REG_A]);
 
 					setHL(getHL() + 1);
 
@@ -637,7 +627,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 				case 3:
 				{
-					write8(getHL(), regs[A]);
+					write8(getHL(), regs[REG_A]);
 
 					setHL(getHL() - 1);
 
@@ -668,21 +658,21 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			{
 				case 0:
 				{
-					regs[A] = read8(getBC());
+					regs[REG_A] = read8(getBC());
 
 					break;
 				}
 
 				case 1:
 				{
-					regs[A] = read8(getDE());
+					regs[REG_A] = read8(getDE());
 
 					break;
 				}
 
 				case 2:
 				{
-					regs[A] = read8(getHL());
+					regs[REG_A] = read8(getHL());
 
 					setHL(getHL() + 1);
 
@@ -691,7 +681,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 				case 3:
 				{
-					regs[A] = read8(getHL());
+					regs[REG_A] = read8(getHL());
 
 					setHL(getHL() - 1);
 
@@ -980,14 +970,14 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// RLCA
 		case 0x07:
 		{
-			uint8_t value = regs[A];
+			uint8_t value = regs[REG_A];
 
 			setFlagC((value >> 7) & 1);
 			setFlagZ(0);
 			setFlagN(0);
 			setFlagH(0);
 
-			regs[A] = (value << 1) | getFlagC();
+			regs[REG_A] = (value << 1) | getFlagC();
 
 			break;
 		}
@@ -996,14 +986,14 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// RRCA
 		case 0x0F:
 		{
-			uint8_t value = regs[A];
+			uint8_t value = regs[REG_A];
 
 			setFlagC(value & 1);
 			setFlagZ(0);
 			setFlagN(0);
 			setFlagH(0);
 
-			regs[A] = (value >> 1) | (getFlagC() << 7);
+			regs[REG_A] = (value >> 1) | (getFlagC() << 7);
 
 			break;
 		}
@@ -1011,7 +1001,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// RLA
 		case 0x17:
 		{
-			uint8_t value = regs[A];
+			uint8_t value = regs[REG_A];
 
 			uint8_t carry = getFlagC();
 			setFlagC((value >> 7) & 1);
@@ -1019,7 +1009,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			setFlagN(0);
 			setFlagH(0);
 
-			regs[A] = (value << 1) | carry;
+			regs[REG_A] = (value << 1) | carry;
 
 			break;
 		}
@@ -1027,7 +1017,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// RRA
 		case 0x1F:
 		{
-			uint8_t value = regs[A];
+			uint8_t value = regs[REG_A];
 
 			uint8_t carry = getFlagC();
 			setFlagC(value & 1);
@@ -1035,7 +1025,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			setFlagN(0);
 			setFlagH(0);
 
-			regs[A] = (value >> 1) | (carry << 7);
+			regs[REG_A] = (value >> 1) | (carry << 7);
 
 			break;
 		}
@@ -1043,7 +1033,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// CPL
 		case 0x2F:
 		{
-			regs[A] = ~regs[A];
+			regs[REG_A] = ~regs[REG_A];
 
 			setFlagN(1);
 			setFlagH(1);
@@ -1090,12 +1080,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// ADD A, r8
 				case 0x00:
 				{
-					setFlagZ((uint8_t)(regs[A] + regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] + regs[r8]) == 0);
 					setFlagN(0);
-					setFlagH(((regs[A] & 0x0F) + (regs[r8] & 0x0F)) > 0x0F);
-					setFlagC(((uint16_t)regs[A] + (uint16_t)regs[r8]) > 0xFF);
+					setFlagH(((regs[REG_A] & 0x0F) + (regs[r8] & 0x0F)) > 0x0F);
+					setFlagC(((uint16_t)regs[REG_A] + (uint16_t)regs[r8]) > 0xFF);
 					
-					regs[A] = regs[A] + regs[r8];
+					regs[REG_A] = regs[REG_A] + regs[r8];
 					
 					break;
 				}
@@ -1103,13 +1093,13 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// ADC A, r8
 				case 0x01:
 				{
-					bool carry = ((uint16_t)regs[A] + (uint16_t)regs[r8] + (uint16_t)getFlagC()) > 0xFF;
+					bool carry = ((uint16_t)regs[REG_A] + (uint16_t)regs[r8] + (uint16_t)getFlagC()) > 0xFF;
 
-					setFlagZ((uint8_t)(regs[A] + regs[r8] + getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] + regs[r8] + getFlagC()) == 0);
 					setFlagN(0);
-					setFlagH(( (regs[A] & 0x0F) + (regs[r8] & 0x0F) + getFlagC() ) > 0x0F);
+					setFlagH(( (regs[REG_A] & 0x0F) + (regs[r8] & 0x0F) + getFlagC() ) > 0x0F);
 					
-					regs[A] = regs[A] + regs[r8] + getFlagC();
+					regs[REG_A] = regs[REG_A] + regs[r8] + getFlagC();
 
 					setFlagC(carry);
 
@@ -1119,12 +1109,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// SUB A, r8
 				case 0x02:
 				{
-					setFlagZ((uint8_t)(regs[A] - regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - regs[r8]) == 0);
 					setFlagN(1);
-					setFlagH((regs[A] & 0x0F) < (regs[r8] & 0x0F));
-					setFlagC(regs[A] < regs[r8]);
+					setFlagH((regs[REG_A] & 0x0F) < (regs[r8] & 0x0F));
+					setFlagC(regs[REG_A] < regs[r8]);
 
-					regs[A] = regs[A] - regs[r8];
+					regs[REG_A] = regs[REG_A] - regs[r8];
 
 					break;
 				}
@@ -1132,13 +1122,13 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// SBC A, r8
 				case 0x03:
 				{
-					bool carry = regs[A] < ((uint16_t)regs[r8] + getFlagC());
+					bool carry = regs[REG_A] < ((uint16_t)regs[r8] + getFlagC());
 
-					setFlagZ((uint8_t)(regs[A] - regs[r8] - getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - regs[r8] - getFlagC()) == 0);
 					setFlagN(1);
-					setFlagH( (regs[A] & 0x0F) < ((regs[r8] & 0x0F) + getFlagC()) );
+					setFlagH( (regs[REG_A] & 0x0F) < ((regs[r8] & 0x0F) + getFlagC()) );
 					
-					regs[A] = regs[A] - regs[r8] - getFlagC();
+					regs[REG_A] = regs[REG_A] - regs[r8] - getFlagC();
 
 					setFlagC(carry);
 
@@ -1148,12 +1138,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// AND A, r8
 				case 0x04:
 				{
-					setFlagZ((uint8_t)(regs[A] & regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] & regs[r8]) == 0);
 					setFlagN(0);
 					setFlagH(1);
 					setFlagC(0);
 
-					regs[A] = regs[A] & regs[r8];
+					regs[REG_A] = regs[REG_A] & regs[r8];
 
 					break;
 				}
@@ -1161,12 +1151,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// XOR A, r8
 				case 0x05:
 				{
-					setFlagZ((uint8_t)(regs[A] ^ regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] ^ regs[r8]) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
 
-					regs[A] = regs[A] ^ regs[r8];
+					regs[REG_A] = regs[REG_A] ^ regs[r8];
 
 					break;
 				}
@@ -1174,12 +1164,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// OR A, r8
 				case 0x06:
 				{
-					setFlagZ((uint8_t)(regs[A] | regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] | regs[r8]) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
 
-					regs[A] = regs[A] | regs[r8];
+					regs[REG_A] = regs[REG_A] | regs[r8];
 
 					break;
 				}
@@ -1187,10 +1177,10 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// CP A, r8
 				case 0x07:
 				{
-					setFlagZ((uint8_t)(regs[A] - regs[r8]) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - regs[r8]) == 0);
 					setFlagN(1);
-					setFlagH((regs[A] & 0x0F) < (regs[r8] & 0x0F));
-					setFlagC(regs[A] < regs[r8]);
+					setFlagH((regs[REG_A] & 0x0F) < (regs[r8] & 0x0F));
+					setFlagC(regs[REG_A] < regs[r8]);
 
 					break;
 				}
@@ -1211,12 +1201,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// ADD A, (HL)
 				case 0x00:
 				{
-					setFlagZ((uint8_t)(regs[A] + val) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] + val) == 0);
 					setFlagN(0);
-					setFlagH(((regs[A] & 0x0F) + (val & 0x0F)) > 0x0F);
-					setFlagC(((uint16_t)regs[A] + (uint16_t)val) > 0xFF);
+					setFlagH(((regs[REG_A] & 0x0F) + (val & 0x0F)) > 0x0F);
+					setFlagC(((uint16_t)regs[REG_A] + (uint16_t)val) > 0xFF);
 
-					regs[A] = regs[A] + val;
+					regs[REG_A] = regs[REG_A] + val;
 
 					break;
 				}
@@ -1224,13 +1214,13 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// ADC A, (HL)
 				case 0x01:
 				{
-					bool carry = ((uint16_t)regs[A] + (uint16_t)val + (uint16_t)getFlagC()) > 0xFF;
+					bool carry = ((uint16_t)regs[REG_A] + (uint16_t)val + (uint16_t)getFlagC()) > 0xFF;
 
-					setFlagZ((uint8_t)(regs[A] + val + getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] + val + getFlagC()) == 0);
 					setFlagN(0);
-					setFlagH(((regs[A] & 0x0F) + (val & 0x0F) + getFlagC()) > 0x0F);
+					setFlagH(((regs[REG_A] & 0x0F) + (val & 0x0F) + getFlagC()) > 0x0F);
 
-					regs[A] = regs[A] + val + getFlagC();
+					regs[REG_A] = regs[REG_A] + val + getFlagC();
 
 					setFlagC(carry);
 
@@ -1240,12 +1230,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// SUB A, (HL)
 				case 0x02:
 				{
-					setFlagZ((uint8_t)(regs[A] - val) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - val) == 0);
 					setFlagN(1);
-					setFlagH((regs[A] & 0x0F) < (val & 0x0F));
-					setFlagC(regs[A] < val);
+					setFlagH((regs[REG_A] & 0x0F) < (val & 0x0F));
+					setFlagC(regs[REG_A] < val);
 
-					regs[A] = regs[A] - val;
+					regs[REG_A] = regs[REG_A] - val;
 
 					break;
 				}
@@ -1253,13 +1243,13 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// SBC A, (HL)
 				case 0x03:
 				{
-					bool carry = regs[A] < ((uint16_t)val + getFlagC());
+					bool carry = regs[REG_A] < ((uint16_t)val + getFlagC());
 
-					setFlagZ((uint8_t)(regs[A] - val - getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - val - getFlagC()) == 0);
 					setFlagN(1);
-					setFlagH((regs[A] & 0x0F) < ((val & 0x0F) + getFlagC()));
+					setFlagH((regs[REG_A] & 0x0F) < ((val & 0x0F) + getFlagC()));
 
-					regs[A] = regs[A] - val - getFlagC();
+					regs[REG_A] = regs[REG_A] - val - getFlagC();
 
 					setFlagC(carry);
 
@@ -1269,12 +1259,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// AND A, (HL)
 				case 0x04:
 				{
-					setFlagZ((uint8_t)(regs[A] & val) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] & val) == 0);
 					setFlagN(0);
 					setFlagH(1);
 					setFlagC(0);
 
-					regs[A] = regs[A] & val;
+					regs[REG_A] = regs[REG_A] & val;
 
 					break;
 				}
@@ -1282,12 +1272,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// XOR A, (HL)
 				case 0x05:
 				{
-					setFlagZ((uint8_t)(regs[A] ^ val) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] ^ val) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
 
-					regs[A] = regs[A] ^ val;
+					regs[REG_A] = regs[REG_A] ^ val;
 
 					break;
 				}
@@ -1295,12 +1285,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// OR A, (HL)
 				case 0x06:
 				{
-					setFlagZ((uint8_t)(regs[A] | val) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] | val) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
 
-					regs[A] = regs[A] | val;
+					regs[REG_A] = regs[REG_A] | val;
 
 					break;
 				}
@@ -1308,10 +1298,10 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// CP A, (HL)
 				case 0x07:
 				{
-					setFlagZ((uint8_t)(regs[A] - val) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - val) == 0);
 					setFlagN(1);
-					setFlagH((regs[A] & 0x0F) < (val & 0x0F));
-					setFlagC(regs[A] < val);
+					setFlagH((regs[REG_A] & 0x0F) < (val & 0x0F));
+					setFlagC(regs[REG_A] < val);
 
 					break;
 				}
@@ -1330,32 +1320,32 @@ void CPU::decodeAndExecute(uint8_t opcode)
 			{
 				case 0x00:
 				{
-					regs[C] = read8(SP++);
-					regs[B] = read8(SP++);
+					regs[REG_C] = read8(SP++);
+					regs[REG_B] = read8(SP++);
 					
 					break;
 				}
 
 				case 0x01:
 				{
-					regs[E] = read8(SP++);
-					regs[D] = read8(SP++);
+					regs[REG_E] = read8(SP++);
+					regs[REG_D] = read8(SP++);
 
 					break;
 				}
 
 				case 0x02:
 				{
-					regs[L] = read8(SP++);
-					regs[H] = read8(SP++);
+					regs[REG_L] = read8(SP++);
+					regs[REG_H] = read8(SP++);
 
 					break;
 				}
 
 				case 0x03:
 				{
-					regs[F] = read8(SP++) & (0xFF << 4);
-					regs[A] = read8(SP++);
+					regs[REG_F] = read8(SP++) & (0xFF << 4);
+					regs[REG_A] = read8(SP++);
 
 					break;
 				}
@@ -1377,8 +1367,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 					AddCycle();
 
-					write8(--SP, regs[B]);
-					write8(--SP, regs[C]);
+					write8(--SP, regs[REG_B]);
+					write8(--SP, regs[REG_C]);
 
 					break;
 				}
@@ -1388,8 +1378,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 					AddCycle();
 
-					write8(--SP, regs[D]);
-					write8(--SP, regs[E]);
+					write8(--SP, regs[REG_D]);
+					write8(--SP, regs[REG_E]);
 
 					break;
 				}
@@ -1399,8 +1389,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 					AddCycle();
 
-					write8(--SP, regs[H]);
-					write8(--SP, regs[L]);
+					write8(--SP, regs[REG_H]);
+					write8(--SP, regs[REG_L]);
 
 					break;
 				}
@@ -1409,8 +1399,8 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				{
 					AddCycle();
 				
-					write8(--SP, regs[A]);
-					write8(--SP, (regs[F] & (0xFF << 4)));
+					write8(--SP, regs[REG_A]);
+					write8(--SP, (regs[REG_F] & (0xFF << 4)));
 
 					break;
 				}
@@ -1725,7 +1715,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			uint16_t address = 0xFF00 | u8;
 
-			write8(address, regs[A]);
+			write8(address, regs[REG_A]);
 
 			break;
 		}
@@ -1737,7 +1727,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			uint16_t address = 0xFF00 | u8;
 
-			regs[A] = read8(address);
+			regs[REG_A] = read8(address);
 
 			break;
 		}
@@ -1746,9 +1736,9 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		case 0xE2:
 		{
 		
-			uint16_t address = 0xFF00 | regs[C];
+			uint16_t address = 0xFF00 | regs[REG_C];
 			
-			write8(address, regs[A]);
+			write8(address, regs[REG_A]);
 
 			break;
 		}
@@ -1760,7 +1750,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			uint16_t address = fetch16();
 
-			write8(address, regs[A]);
+			write8(address, regs[REG_A]);
 
 			break;
 		}
@@ -1768,9 +1758,9 @@ void CPU::decodeAndExecute(uint8_t opcode)
 		// LD A, (FF00 + C)
 		case 0xF2:
 		{
-			uint16_t address = 0xFF00 | regs[C];
+			uint16_t address = 0xFF00 | regs[REG_C];
 
-			regs[A] = read8(address);
+			regs[REG_A] = read8(address);
 
 			break;
 		}
@@ -1782,7 +1772,7 @@ void CPU::decodeAndExecute(uint8_t opcode)
 
 			uint16_t address = fetch16();
 
-			regs[A] = read8(address);
+			regs[REG_A] = read8(address);
 
 			break;
 		}
@@ -1845,12 +1835,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// ADD A, u8
 				case 0x00:
 				{
-					setFlagZ((uint8_t)(regs[A] + u8) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] + u8) == 0);
 					setFlagN(0);
-					setFlagH(((regs[A] & 0x0F) + (u8 & 0x0F)) > 0x0F);
-					setFlagC(((uint16_t)regs[A] + (uint16_t)u8) > 0xFF);
+					setFlagH(((regs[REG_A] & 0x0F) + (u8 & 0x0F)) > 0x0F);
+					setFlagC(((uint16_t)regs[REG_A] + (uint16_t)u8) > 0xFF);
 
-					regs[A] = regs[A] + u8;
+					regs[REG_A] = regs[REG_A] + u8;
 
 					break;
 				}
@@ -1858,13 +1848,13 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// ADC A, u8
 				case 0x01:
 				{
-					bool carry = ((uint16_t)regs[A] + (uint16_t)u8 + (uint16_t)getFlagC()) > 0xFF;
+					bool carry = ((uint16_t)regs[REG_A] + (uint16_t)u8 + (uint16_t)getFlagC()) > 0xFF;
 
-					setFlagZ((uint8_t)(regs[A] + u8 + getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] + u8 + getFlagC()) == 0);
 					setFlagN(0);
-					setFlagH(((regs[A] & 0x0F) + (u8 & 0x0F) + getFlagC()) > 0x0F);
+					setFlagH(((regs[REG_A] & 0x0F) + (u8 & 0x0F) + getFlagC()) > 0x0F);
 
-					regs[A] = regs[A] + u8 + getFlagC();
+					regs[REG_A] = regs[REG_A] + u8 + getFlagC();
 
 					setFlagC(carry);
 
@@ -1874,12 +1864,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// SUB A, u8
 				case 0x02:
 				{
-					setFlagZ((uint8_t)(regs[A] - u8) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - u8) == 0);
 					setFlagN(1);
-					setFlagH((regs[A] & 0x0F) < (u8 & 0x0F));
-					setFlagC(regs[A] < u8);
+					setFlagH((regs[REG_A] & 0x0F) < (u8 & 0x0F));
+					setFlagC(regs[REG_A] < u8);
 
-					regs[A] = regs[A] - u8;
+					regs[REG_A] = regs[REG_A] - u8;
 
 					break;
 				}
@@ -1887,13 +1877,13 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// SBC A, u8
 				case 0x03:
 				{
-					bool carry = regs[A] < ((uint16_t)u8 + getFlagC());
+					bool carry = regs[REG_A] < ((uint16_t)u8 + getFlagC());
 
-					setFlagZ((uint8_t)(regs[A] - u8 - getFlagC()) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - u8 - getFlagC()) == 0);
 					setFlagN(1);
-					setFlagH((regs[A] & 0x0F) < ((u8 & 0x0F) + getFlagC()));
+					setFlagH((regs[REG_A] & 0x0F) < ((u8 & 0x0F) + getFlagC()));
 
-					regs[A] = regs[A] - u8 - getFlagC();
+					regs[REG_A] = regs[REG_A] - u8 - getFlagC();
 
 					setFlagC(carry);
 
@@ -1903,12 +1893,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// AND A, u8
 				case 0x04:
 				{
-					setFlagZ((uint8_t)(regs[A] & u8) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] & u8) == 0);
 					setFlagN(0);
 					setFlagH(1);
 					setFlagC(0);
 
-					regs[A] = regs[A] & u8;
+					regs[REG_A] = regs[REG_A] & u8;
 
 					break;
 				}
@@ -1916,12 +1906,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// XOR A, u8
 				case 0x05:
 				{
-					setFlagZ((uint8_t)(regs[A] ^ u8) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] ^ u8) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
 
-					regs[A] = regs[A] ^ u8;
+					regs[REG_A] = regs[REG_A] ^ u8;
 
 					break;
 				}
@@ -1929,12 +1919,12 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// OR A, u8
 				case 0x06:
 				{
-					setFlagZ((uint8_t)(regs[A] | u8) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] | u8) == 0);
 					setFlagN(0);
 					setFlagH(0);
 					setFlagC(0);
 
-					regs[A] = regs[A] | u8;
+					regs[REG_A] = regs[REG_A] | u8;
 
 					break;
 				}
@@ -1942,10 +1932,10 @@ void CPU::decodeAndExecute(uint8_t opcode)
 				// CP A, u8
 				case 0x07:
 				{
-					setFlagZ((uint8_t)(regs[A] - u8) == 0);
+					setFlagZ((uint8_t)(regs[REG_A] - u8) == 0);
 					setFlagN(1);
-					setFlagH((regs[A] & 0x0F) < (u8 & 0x0F));
-					setFlagC(regs[A] < u8);
+					setFlagH((regs[REG_A] & 0x0F) < (u8 & 0x0F));
+					setFlagC(regs[REG_A] < u8);
 
 					break;
 				}
@@ -2012,28 +2002,28 @@ void CPU::decodeAndExecute(uint8_t opcode)
 					adj += 0x60;
 				}
 				
-				regs[A] = regs[A] - adj;
+				regs[REG_A] = regs[REG_A] - adj;
 			}
 			else
 			{
 				uint8_t adj = 0x00;
 
-				if (getFlagC() || (regs[A] > 0x99))
+				if (getFlagC() || (regs[REG_A] > 0x99))
 				{
 					adj += 0x60;
 
 					setFlagC(1);
 				}
 
-				if (getFlagH() || ((regs[A] & 0x0F) > 0x09))
+				if (getFlagH() || ((regs[REG_A] & 0x0F) > 0x09))
 				{
 					adj += 0x06;
 				}
 			
-				regs[A] = regs[A] + adj;
+				regs[REG_A] = regs[REG_A] + adj;
 			}
 
-			setFlagZ(regs[A] == 0);
+			setFlagZ(regs[REG_A] == 0);
 			setFlagH(0);
 
 			break;

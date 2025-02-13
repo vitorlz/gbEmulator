@@ -131,6 +131,10 @@ public:
 	bool oldStat = false;
 	bool curStat = true;
 
+	unsigned int shaderProgram;
+	unsigned int displayTexture;
+	unsigned int VAO;
+
 	bool lastSpriteTall = false;
 
 	// count scanline cycles;
@@ -196,6 +200,8 @@ public:
 	int vBlankCycleCounter = 0;
 
 	uint8_t colors[4] =  { 0xFF, 0xAA, 0x55, 0x00 };
+
+	void draw();
 
 private:
 	MMU& mmu;
