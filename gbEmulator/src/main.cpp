@@ -16,11 +16,14 @@
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void window_close_callback(GLFWwindow* window);
 void processInput(GLFWwindow* window);
 
 // settings
 const unsigned int SCR_WIDTH = 320;
 const unsigned int SCR_HEIGHT = 288;
+
+GameBoy gb;
 
 int main(int argc, char* argv[])
 {
@@ -46,6 +49,7 @@ int main(int argc, char* argv[])
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetWindowCloseCallback(window, window_close_callback);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -144,14 +148,13 @@ int main(int argc, char* argv[])
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    GameBoy gb;   
-    std::string rom = argc > 1 ? argv[1] : "res/testroms/zelda.gb";
+    
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/prehistorikman.gb";
     gb.readRom(rom);
 
     //JsonTest jsonTest(gb);
     //jsonTest.RunAllTests();
 
-         
     glfwSwapInterval(0);
 
     double lastTime = 0;
@@ -172,7 +175,7 @@ int main(int argc, char* argv[])
         {
             uint8_t opcode = gb.fetch();
 
-            if (gb.keyDown[GLFW_KEY_A])
+            if (gb.keyPressed[GLFW_KEY_A])
             {
                 std::cout << std::hex << "PC: " << (gb.cpu.PC - 1) << " opcode: " << std::hex << int(opcode) << "\n";
                 std::cout << "STAT: " << std::hex << (int)gb.mmu.read8(0xFF41) << "\n";
@@ -182,7 +185,7 @@ int main(int argc, char* argv[])
                 std::cout << "PPU STATE: " << gb.ppu.isDisplayEnabled() << "\n";
             }
 
-            if (gb.keyDown[GLFW_KEY_B])
+            if (gb.keyPressed[GLFW_KEY_B])
             {
                 std::cout << std::dec << "IE: " << (int)gb.mmu.read8(0xFFFF) << "\n";
                 std::cout << "IME: " << gb.cpu.IME << "\n";
@@ -198,6 +201,8 @@ int main(int argc, char* argv[])
 
         gb.handleInterrupts();
 
+      
+
         if (gb.cpu.tCycles >= 70224)
         {
             processInput(window);
@@ -206,6 +211,8 @@ int main(int argc, char* argv[])
                 if (glfwGetKey(window, i) == GLFW_PRESS && !gb.keyDown[i])
                 {
                     gb.keyPressed[i] = true;
+
+                    std::cout << "key pressed: " << i << "\n";
                 }
                 else
                 {
@@ -221,6 +228,13 @@ int main(int argc, char* argv[])
                 {
                     gb.keyDown[i] = false;
                 }
+            }
+
+            if (gb.keyPressed[GLFW_KEY_F3])
+            {
+                std::cout << "SAVING..." << "\n";
+                gb.saveGame();
+                std::cout << "DONE" << "\n";
             }
 
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -285,4 +299,12 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+void window_close_callback(GLFWwindow* window)
+{
+    if (gb.mmu.cartHasBattery)
+    {
+        gb.saveGame();
+    }
 }

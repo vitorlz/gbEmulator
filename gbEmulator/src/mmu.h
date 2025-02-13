@@ -78,6 +78,8 @@ public:
 	unsigned int sRamSize = 0;
 	unsigned int sRamNumOfBanks = 0;
 
+	bool cartHasBattery = false;
+
 	uint8_t lastLatchWrite = 0;
 
 	struct RTC

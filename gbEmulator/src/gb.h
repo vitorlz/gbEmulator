@@ -49,6 +49,11 @@ public:
 	bool ssba = false;
 	bool dPad = false;
 
+	std::string filePath;
+
+	void saveGame();
+	void loadSave();
+
 	MMU mmu;
 	PPU ppu;
 	CPU cpu;	

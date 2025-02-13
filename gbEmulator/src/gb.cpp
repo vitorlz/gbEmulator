@@ -13,6 +13,8 @@ GameBoy::GameBoy()
 
 void GameBoy::readRom(const std::string rom)
 {
+    filePath = rom;
+
     std::ifstream is(rom.c_str(), std::ifstream::binary);
     if (is) 
     {
@@ -54,15 +56,18 @@ void GameBoy::readRom(const std::string rom)
             break;
         case 0x03:
             std::cout << "MBC1+RAM+BATTERY" << "\n";
+            mmu.cartHasBattery = true;
             mmu.mbc = MBC1;
             break;
         case 0x0F:
             std::cout << "MBC3+TIMER+BATTERY" << "\n";
-            mmu.mbc = MBC3;
+            mmu.cartHasBattery = true;
             mmu.cartridgeHasRTC = true;
+            mmu.mbc = MBC3;
             break;
         case 0x10:
             std::cout << "MBC3+TIMER+RAM+BATTERY" << "\n";
+            mmu.cartHasBattery = true;
             mmu.cartridgeHasRTC = true;
             mmu.mbc = MBC3;
             break;
@@ -76,6 +81,7 @@ void GameBoy::readRom(const std::string rom)
             break;
         case 0x13:
             std::cout << "MBC3+RAM+BATTERY" << "\n";
+            mmu.cartHasBattery = true;
             mmu.mbc = MBC3;
             break;
         case 0x19:
@@ -88,6 +94,7 @@ void GameBoy::readRom(const std::string rom)
             break;
         case 0x1B:
             std::cout << "MBC5+RAM+BATTERY" << "\n";
+            mmu.cartHasBattery = true;
             mmu.mbc = MBC5;
             break;
         case 0x1C:
@@ -102,6 +109,7 @@ void GameBoy::readRom(const std::string rom)
             break;
         case 0x1E:
             std::cout << "MBC5+RUMBLE+RAM+BATTERY" << "\n";
+            mmu.cartHasBattery = true;
             mmu.cartridgeHasRumble = true;
             mmu.mbc = MBC5;
             break;
@@ -186,37 +194,44 @@ void GameBoy::readRom(const std::string rom)
             std::cout << "Unused / 2KiB" << "\n";
             mmu.sRamNumOfBanks = 0;
             mmu.sRamSize = 0x800;
-            mmu.eRam.resize(0x800);
             break;
         case 0x02:
             std::cout << "8 KiB" << "\n";
             std::cout << "1 SRAM bank" << "\n";
             mmu.sRamNumOfBanks = 1;
             mmu.sRamSize = 0x2000;
-            mmu.eRam.resize(0x2000);
             break;
         case 0x03:
             std::cout << "32 KiB" << "\n";
             std::cout << "4 RAM banks" << "\n";
             mmu.sRamNumOfBanks = 4;
             mmu.sRamSize = 0x8000;
-            mmu.eRam.resize(0x8000);
             break;
         case 0x04:
             std::cout << "128 KiB" << "\n";
             std::cout << "16 RAM banks" << "\n";
             mmu.sRamNumOfBanks = 16;
             mmu.sRamSize = 0x20000;
-            mmu.eRam.resize(0x20000);
             break;
         case 0x05:
             std::cout << "64 KiB" << "\n";
             std::cout << "8 RAM banks" << "\n";
             mmu.sRamNumOfBanks = 8;
             mmu.sRamSize = 0x10000;
-            mmu.eRam.resize(0x10000);
             break;
         }
+
+        if (mmu.cartHasBattery)
+        {
+            loadSave();
+        }
+
+        if (mmu.mbc == MBC5)
+        {
+            mmu.romBankNumber = 0;
+        }
+
+        mmu.eRam.resize(mmu.sRamSize);
         
         is.close();
         delete[] buffer;
@@ -441,4 +456,48 @@ void GameBoy::handleInterrupts()
 bool GameBoy::isCPUHalted()
 {
     return cpu.HALT;
+}
+
+void GameBoy::saveGame()
+{
+    std::string saveName = filePath + "_save";
+
+    std::ofstream outputFileStream; 
+    outputFileStream.open(saveName, std::ios::out | std::ios::binary);
+
+
+    for (int i = 0; i < mmu.eRam.size(); i++)
+        outputFileStream.write((char*)&mmu.eRam[i], sizeof(uint8_t));
+
+    outputFileStream.close();
+}
+
+void GameBoy::loadSave()
+{
+    std::string saveName = filePath + "_save";
+    std::ifstream is(saveName.c_str(), std::ifstream::binary);
+    if (is)
+    {
+        is.seekg(0, is.end);
+        int length = is.tellg();
+        is.seekg(0, is.beg);
+
+        char* buffer = new char[length];
+
+        is.read(buffer, length);
+
+        if (is)
+            std::cout << "save file read successfully\n";
+        else
+            std::cout << "error: only " << is.gcount() << " could be read\n";
+            
+        std::cout << "save file length: " << length << "\n";
+
+        for (int i = 0; i < length; i++)
+        {
+            mmu.eRam.push_back(buffer[i]);
+        }
+    }
+
+    mmu.eRam.resize(mmu.sRamSize);
 }

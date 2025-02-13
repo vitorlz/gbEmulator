@@ -139,6 +139,7 @@ uint8_t MMU::read8(uint16_t address)
 		{
 			if (sRamEnabled)
 			{
+				std::cout << "rambanknumber read: " << std::dec << (int)ramBankNumber << "\n";
 				return eRam[0x2000 * ramBankNumber + (address - 0xA000)];
 			}
 			else
@@ -176,6 +177,7 @@ uint8_t MMU::read8(uint16_t address)
 		return ie[address - 0xFFFF];
 	}
 }
+
 
 void MMU::write8(uint16_t address, uint8_t value)
 {
@@ -372,9 +374,14 @@ void MMU::write8(uint16_t address, uint8_t value)
 			{
 				rumbleEnabled = (value >> 3) & 1;
 
+				std::cout << "value being written: " << std::dec << (int)value << "\n";
+
 				value = value & 0b11110111;
 
-				ramBankNumber = value;
+				if (value <= 16)
+				{
+					ramBankNumber = value;
+				}
 			}
 			else
 			{
