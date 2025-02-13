@@ -60,7 +60,6 @@
   <ItemGroup>
     <None Include="res\shaders\pixel.vert" />
     <None Include="res\shaders\pixel.frag" />
-    <None Include="cmake\Findglfw3.cmake" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />

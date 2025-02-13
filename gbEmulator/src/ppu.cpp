@@ -39,7 +39,6 @@ void PPU::statInterruptCheck()
 
 void PPU::reset()
 {
-	setMode(HBLANK_0);
 	setLY(0);
 
 	fetcherXPositionCounter = 0;
@@ -110,15 +109,13 @@ void PPU::tick()
 	if (!isDisplayEnabled() && !displayDisabled && displayWasEnabledBefore)
 	{
 		reset();
-		mmu.write8(STAT_ADDRESS, 0x00);
+		setMode(HBLANK_0);
+		setSTATCoincidenceFlag(false);
 		displayDisabled = true;
-
-		std::cout << "display disabled" << "\n";
 	}
 
 	if (displayDisabled && isDisplayEnabled())
 	{
-		std::cout << "display reenabled" << "\n";
 		displayDisabled = false;
 		setMode(OAM_SCAN_2);
 	}
@@ -130,16 +127,9 @@ void PPU::tick()
 
 	displayWasEnabledBefore = isDisplayEnabled();
 
-	//std::cout << "display enabled: " << isDisplayEnabled() << "\n";
-
 	static int totalCycles = 0;
 
-	
 	scanlineCycles++;
-	
-	lycEqualLy = checkLycEqualLy() ? 1 : 0;
-	setSTATCoincidenceFlag(lycEqualLy);
-	// Check for LYC == LY interrupt
 	
 
 	if (ppuMode == VBLANK_1)
@@ -150,14 +140,15 @@ void PPU::tick()
 			draw();
 			ppuMode = OAM_SCAN_2;
 			setLY(0);
-
-			/*std::cout << "display enabled: " << isDisplayEnabled()*/
 		}
 		windowLineCounter = 0;
 		wyEqualLyThisFrame = false;
 		wyEqualLy = false;
 	}
 
+	lycEqualLy = checkLycEqualLy();
+	setSTATCoincidenceFlag(lycEqualLy);
+	
 	// ----------------------------- OAM SCAN ---------------------------------------------------
 	if (scanlineCycles <= 80 && ppuMode != VBLANK_1)
 	{	
@@ -224,6 +215,9 @@ void PPU::tick()
 	// ----------------------------- DRAWING ---------------------------------------------------
 	if (scanlineCycles > 80 && !exittedDrawingMode && ppuMode != VBLANK_1)
 	{
+
+		static int drawingCycles = 0;
+
 		if (scanlineCycles == 81)
 		{
 			setMode(DRAWING_3);
@@ -650,6 +644,8 @@ void PPU::tick()
 				LX++;
 			}
 
+			drawingCycles++;
+
 			// DRAWING MODE ENDED --> RESET STATE
 			if (LX == 168)
 			{
@@ -682,6 +678,8 @@ void PPU::tick()
 					
 				}
 
+				drawingCycles = 0;
+
 				spPixelFIFO.clear();
 				spritesBuffer.clear();
 
@@ -693,6 +691,8 @@ void PPU::tick()
 				spriteFetchEnabled = false;
 			}
 		}
+
+
 	}
 
 	// ---------------------------------------- HBLANK --------------------------------------------------
@@ -706,8 +706,6 @@ void PPU::tick()
 		}
 	}
 
-	
-
 	if (scanlineCycles >= 456)
 	{
 		setLY(getLY() + 1);
@@ -719,8 +717,6 @@ void PPU::tick()
 		exittedDrawingMode = false;
 		firstHBlankCycle = true;
 		scanlineCycles = 0;
-
-		//std::cout << "LY: " << std::dec << (int)getLY() << "\n";
 	}
 
 	if (getLY() == 144 && ppuMode != VBLANK_1)
@@ -849,7 +845,9 @@ void PPU::setSTATCoincidenceFlag(bool b)
 {
 	uint8_t stat = mmu.read8(STAT_ADDRESS);
 	
-	stat = (stat & ~(1 << 2)) | (b << 2);
+	stat = (stat & 0b11111011) | (b << 2);
+
+	mmu.write8(STAT_ADDRESS, stat);
 }
 
 void PPU::draw()

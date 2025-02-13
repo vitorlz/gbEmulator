@@ -141,9 +141,8 @@ int main(int argc, char* argv[])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glBindTexture(GL_TEXTURE_2D, 0);
-
     
-    std::string rom = argc > 1 ? argv[1] : "C:/dev/gbEmulator/gbEmulator/res/testroms/zelda.gb";
+    std::string rom = argc > 1 ? argv[1] : "res/testroms/pokemonsilver.gbc";
     gb.readRom(rom);
 
     glfwSwapInterval(0);
@@ -203,8 +202,6 @@ int main(int argc, char* argv[])
                 if (glfwGetKey(window, i) == GLFW_PRESS && !gb.keyDown[i])
                 {
                     gb.keyPressed[i] = true;
-
-                    std::cout << "key pressed: " << i << "\n";
                 }
                 else
                 {
@@ -252,7 +249,6 @@ int main(int argc, char* argv[])
 
             if (frameCount >= 60)
             {
-                std::cout << "fps: " << 1 / (glfwGetTime() - currentTime) << "\n";
                 frameCount = 0;
             }     
         }
