@@ -4,10 +4,10 @@ project(gbEmulator)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# FetchContent for third-party dependencies
+# Use FetchContent to bring in third-party dependencies
 include(FetchContent)
 
-# Fetch GLFW
+### Fetch GLFW
 FetchContent_Declare(
     glfw
     GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -15,7 +15,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-# Fetch GLAD 
+### Fetch GLAD 
 FetchContent_Declare(
     glad
     GIT_REPOSITORY https://github.com/Dav1dde/glad.git
@@ -23,7 +23,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glad)
 
-# Fetch nlohmann/json
+### Fetch nlohmann/json
 FetchContent_Declare(
     json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -31,26 +31,60 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
-# Shader handling (copy shaders to build folder)
-set(SHADER_SOURCE_DIR "${CMAKE_SOURCE_DIR}/res/shaders")
-set(SHADER_OUTPUT_DIR "${CMAKE_BINARY_DIR}/res")
+### Fetch ImGui
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.89.8
+)
+FetchContent_MakeAvailable(imgui)
+
+### Fetch tinyfiledialogs
+FetchContent_Declare(
+    tinyfiledialogs
+    GIT_REPOSITORY https://github.com/native-toolkit/tinyfiledialogs.git
+    GIT_TAG 2.9.3
+)
+FetchContent_MakeAvailable(tinyfiledialogs)
 
 # Copy shaders to the build directory
+set(SHADER_SOURCE_DIR "${CMAKE_SOURCE_DIR}/res/shaders")
+set(SHADER_OUTPUT_DIR "${CMAKE_BINARY_DIR}/res")
 file(COPY ${SHADER_SOURCE_DIR} DESTINATION ${SHADER_OUTPUT_DIR})
 
-# Source files
+# Create the executable and add your source files
 add_executable(gbEmulator 
     src/main.cpp 
     src/gb.cpp
     src/cpu.cpp
     src/mmu.cpp
     src/ppu.cpp
+    src/App.cpp            
+    src/renderingManager.cpp  
+)
+# Add ImGui source files (adjust if you don't need demo code)
+target_sources(gbEmulator PRIVATE
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-# Include directories
+# Add tinyfiledialogs source file (it's a single C file)
+target_sources(gbEmulator PRIVATE
+    ${tinyfiledialogs_SOURCE_DIR}/tinyfiledialogs.c
+)
+
+# Include directories for all dependencies
 target_include_directories(gbEmulator PRIVATE 
     ${glfw_SOURCE_DIR}/include
     ${glad_SOURCE_DIR}/include
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
+    ${tinyfiledialogs_SOURCE_DIR}
 )
 
 # Link libraries
@@ -59,3 +93,8 @@ target_link_libraries(gbEmulator PRIVATE
     glad 
     nlohmann_json::nlohmann_json
 )
+
+# Linux stuff
+if(UNIX AND NOT APPLE)
+    target_link_libraries(gbEmulator PRIVATE m dl pthread X11)
+endif()

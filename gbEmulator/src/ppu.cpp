@@ -2,7 +2,6 @@
 #include <glad/glad.h>
 #include "ppu.h"
 
-
 #define OAM_START_ADDRESS 0xFE00
 #define LY_ADDRESS 0xFF44
 #define LYC_ADDRESS 0xFF45

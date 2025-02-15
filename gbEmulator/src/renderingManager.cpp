@@ -7,7 +7,6 @@
 #include <fstream>
 #include <sstream>
 #include <glad/glad.h>
-
 #include <tinyfiledialogs.h>
 
 #include "gb.h"

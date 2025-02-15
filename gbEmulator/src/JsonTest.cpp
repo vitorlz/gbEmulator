@@ -7,8 +7,6 @@
 
 #include "jsonTest.h"
 
-
-
 JsonTest::JsonTest(GameBoy& gb)
 	: gb(gb) {}
 
