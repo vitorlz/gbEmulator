@@ -62,7 +62,7 @@ add_executable(gbEmulator
     src/App.cpp            
     src/renderingManager.cpp  
 )
-# Add ImGui source files (adjust if you don't need demo code)
+# Add ImGui source files 
 target_sources(gbEmulator PRIVATE
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
@@ -73,7 +73,7 @@ target_sources(gbEmulator PRIVATE
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-# Add tinyfiledialogs source file (it's a single C file)
+# Add tinyfiledialogs source file 
 target_sources(gbEmulator PRIVATE
     ${tinyfiledialogs_SOURCE_DIR}/tinyfiledialogs.c
 )

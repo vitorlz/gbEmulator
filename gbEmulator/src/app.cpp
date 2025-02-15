@@ -67,7 +67,9 @@ void App::initWindow()
     // disable vsync
     glfwSwapInterval(0);
     
-    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT - 19);
+    int framebufferWidth, framebufferHeight;
+    glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
+    glViewport(0, 0, framebufferWidth, framebufferHeight - 19);
 
 }
 
