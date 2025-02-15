@@ -5,6 +5,10 @@
 #include <memory>
 #include "mmu.h"
 
+#define GLFW_INCLUDE_NONE
+
+#include <GLFW/glfw3.h>
+
 
 enum MODE
 {
@@ -97,6 +101,8 @@ public:
 	unsigned int spFetchTileLowCycles = 0;
 	unsigned int spFetchTileHighCycles = 0;
 	unsigned int spPushToFifoCycles = 0;
+
+	bool canDraw = true;
 
 	DRAWINGSTATE bgDrawingState = BG_FETCH_TILE_NUM;
 	DRAWINGSTATE spDrawingState = SP_FETCH_TILE_NUM;
@@ -197,9 +203,11 @@ public:
 
 	std::queue<Pixel> bgFetchBuffer;
 
+	GLFWwindow* window;
+
 	int vBlankCycleCounter = 0;
 
-	uint8_t colors[4] =  { 0xFF, 0xAA, 0x55, 0x00 };
+	uint8_t colors[4] =  { 227, 152, 78, 20 };
 
 	void draw();
 

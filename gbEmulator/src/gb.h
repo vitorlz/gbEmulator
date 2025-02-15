@@ -8,10 +8,9 @@
 #include "cpu.h"
 #include "mmu.h"
 #include "ppu.h"
+#include "renderingManager.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-
 
 enum Button
 {
@@ -28,9 +27,11 @@ enum Button
 class GameBoy
 {
 public:
-	GameBoy();
+	GameBoy(GLFWwindow* window);
+	~GameBoy();
 
-	void readRom(const std::string path);
+	// pass empty string to savePath if no save file
+	void readRom(const std::string path, const std::string savePath);
 	
 	uint8_t fetch();
 	void decodeAndExecute(uint8_t opcode);
@@ -39,6 +40,9 @@ public:
 	bool isCPUHalted();
 
 	void checkForInput(GLFWwindow* window);
+	void checkCartridgeType();
+	void checkRomSize();
+	void checkSramSize();
 	
 	bool keyPressed[379];
 	bool keyDown[379];
@@ -51,10 +55,25 @@ public:
 
 	std::string filePath;
 
+	// if the savePath is empty, it will save the file as the rom file path concatenated with _save
 	void saveGame();
-	void loadSave();
+	void loadSave(std::string path);
+
+	bool run();
+
+	void processInput();
+
+	bool validRomLoaded = false;
+
+	bool restartRequested = false;
+	bool loadSaveRequested = false;
+
+	std::string saveFilePath = "";
+
+	GLFWwindow* window;
 
 	MMU mmu;
 	PPU ppu;
-	CPU cpu;	
+	CPU cpu; 
+	RenderingManager* renderingManager;
 };

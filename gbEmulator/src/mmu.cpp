@@ -374,8 +374,6 @@ void MMU::write8(uint16_t address, uint8_t value)
 			{
 				rumbleEnabled = (value >> 3) & 1;
 
-				std::cout << "value being written: " << std::dec << (int)value << "\n";
-
 				value = value & 0b11110111;
 
 				if (value <= 16)

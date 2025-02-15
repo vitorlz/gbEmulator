@@ -57,7 +57,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>vendor/glad/include;vendor/GLFW/include;vendor/nlohmann/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor/glad/include;vendor/GLFW/include;vendor/nlohmann/include;vendor/imgui;vendor/tinyfiledialogs/include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -75,7 +75,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>vendor/glad/include;vendor/GLFW/include;vendor/nlohmann/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendor/glad/include;vendor/GLFW/include;vendor/nlohmann/include;vendor/imgui;vendor/tinyfiledialogs/include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -88,21 +88,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\app.cpp" />
     <ClCompile Include="src\cpu.cpp" />
     <ClCompile Include="src\gb.cpp" />
     <ClCompile Include="src\jsonTest.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mmu.cpp" />
     <ClCompile Include="src\ppu.cpp" />
+    <ClCompile Include="src\renderingManager.cpp" />
     <ClCompile Include="vendor\glad\src\glad.c" />
+    <ClCompile Include="vendor\imgui\imgui.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_tables.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="vendor\tinyfiledialogs\tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\app.h" />
     <ClInclude Include="src\cpu.h" />
     <ClInclude Include="src\gb.h" />
     <ClInclude Include="src\jsonTest.h" />
     <ClInclude Include="src\mmu.h" />
     <ClInclude Include="src\ppu.h" />
     <ClInclude Include="src\regs.h" />
+    <ClInclude Include="src\renderingManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\pixel.frag" />

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <glad/glad.h>
 #include "ppu.h"
 
 
@@ -8,13 +9,8 @@
 #define LCDC_ADDRESS 0xFF40
 #define STAT_ADDRESS 0xFF41
 
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-
 PPU::PPU(MMU& mmu) 
-	: mmu(mmu) 
+	: mmu(mmu), window(window)
 {
 	setLY(0);
 };
@@ -137,7 +133,6 @@ void PPU::tick()
 		if (getLY() == 154)
 		{
 			totalCycles = 0;
-			draw();
 			ppuMode = OAM_SCAN_2;
 			setLY(0);
 		}
@@ -152,9 +147,10 @@ void PPU::tick()
 	// ----------------------------- OAM SCAN ---------------------------------------------------
 	if (scanlineCycles <= 80 && ppuMode != VBLANK_1)
 	{	
-
+		
 		if (scanlineCycles == 1)
 		{
+			canDraw = false;
 			setMode(OAM_SCAN_2);
 		}
 
@@ -721,6 +717,9 @@ void PPU::tick()
 
 	if (getLY() == 144 && ppuMode != VBLANK_1)
 	{
+		// push pixels from lcd array to displayTexture.
+		draw();
+		canDraw = true;
 		setMode(VBLANK_1);
 		mmu.requestInterrupt(VBLANK);
 	}
@@ -852,11 +851,7 @@ void PPU::setSTATCoincidenceFlag(bool b)
 
 void PPU::draw()
 {
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glUseProgram(shaderProgram);
 	glBindTexture(GL_TEXTURE_2D, displayTexture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RED, GL_UNSIGNED_BYTE, &LCD[0]);
-	glBindVertexArray(VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
