@@ -6,131 +6,109 @@ uint8_t MMU::read8(uint16_t address)
 {
 	if (address <= 0x3FFF) 
 	{
-		if (mbc == MBC0)
+		switch (mbc)
 		{
+		case MBC0:
 			return fullrom[address];
-		}
-		else if (mbc == MBC1)
-		{
-			if (modeFlag == 0)
-			{
-				return fullrom[address];
-			}
-			else
-			{
-				return fullrom[0x4000 * getMBC1ZeroBankNumber() + address];
-			}
-		}
-		else if (mbc == MBC3)
-		{
-			return fullrom[address];
-		}
-		else if (mbc == MBC5)
-		{
-			return fullrom[address];
-		}
-	}
-	else if (address >= 0x4000 && address <= 0x7FFF)
-	{
-		if (mbc == MBC0)
-		{
-			return fullrom[address];
-		}
-		else if (mbc == MBC1)
-		{
-			return fullrom[0x4000 * getMBC1HighBankNumber() + (address - 0x4000)];
-		}
-		else if (mbc == MBC3)
-		{
-			return fullrom[0x4000 * romBankNumber + (address - 0x4000)];
-		}
-		else if (mbc == MBC5)
-		{
-			return fullrom[0x4000 * romBankNumber + (address - 0x4000)];
-		}
-	}
-	else if (address >= 0x8000 && address <= 0x9FFF)
-	{
+			break;
 
+		case MBC1:
+			return modeFlag == 0 ? fullrom[address] : fullrom[0x4000 * getMBC1ZeroBankNumber() + address];
+			break;
+		case MBC3:
+			return fullrom[address];
+			break;
+
+		case MBC5:
+			return fullrom[address];
+			break;
+		}
+	}
+	else if (address <= 0x7FFF)
+	{
+		switch (mbc)
+		{
+		case MBC0:
+			return fullrom[address];
+			break;
+
+		case MBC1:
+			return fullrom[0x4000 * getMBC1HighBankNumber() + (address - 0x4000)];
+			break;
+		case MBC3:
+			return fullrom[0x4000 * romBankNumber + (address - 0x4000)];
+			break;
+
+		case MBC5:
+			return fullrom[0x4000 * romBankNumber + (address - 0x4000)];
+			break;
+		}
+	}
+	else if (address <= 0x9FFF)
+	{
 		return vRam[address - 0x8000];
 	}
-	else if (address >= 0xA000 && address <= 0xBFFF)
+	else if (address <= 0xBFFF)
 	{
-		if (mbc == MBC0)
+		switch (mbc)
 		{
+		case MBC0:
 			return eRam[address - 0xA000];
-		}
-		else if (mbc == MBC1)
-		{
-			if (sRamEnabled)
-			{
-				if (sRamSize == 0x800 || sRamSize == 0x2000)
-				{
-					return eRam[(address - 0xA000) % sRamSize];
-				}
-				else if (sRamSize == 0x8000)
-				{
+			break;
 
-					if (modeFlag == 1)
-					{
-						return eRam[0x2000 * ramBankNumber + (address - 0xA000)];
-					}
-					else
-					{
-						return eRam[address - 0xA000];
-					}
-					
-				}
-			}
-			else
-			{
+		case MBC1:
+			if (!sRamEnabled)
 				return 0xFF;
-			}	
-		}
-		else if (mbc == MBC3)
-		{
-			if (sRamEnabled)
+
+			if (sRamSize == 0x800 || sRamSize == 0x2000)
 			{
-				if (!mappedRTCRegister)
-				{
-					return eRam[0x2000 * ramBankNumber + (address - 0xA000)];
-				}	
-				else if (!latchOccurred)
-				{
-					return 0xFF;
-				}
-				else if (mappedRTCRegister == 0x08)
-				{
-					return rtcLatched.s;
-				}
-				else if (mappedRTCRegister == 0x09)
-				{
-					return rtcLatched.m;
-				}
-				else if (mappedRTCRegister == 0x0A)
-				{
-					return rtcLatched.h;
-				}
-				else if (mappedRTCRegister == 0x0B)
-				{
-					return rtcLatched.dl;
-				}
-				else if (mappedRTCRegister == 0x0C)
-				{
-					return rtcLatched.dh;
-				}	
+				return eRam[(address - 0xA000) % sRamSize];
 			}
-		}
-		else if (mbc == MBC5)
-		{
-			if (sRamEnabled)
+			else if (sRamSize == 0x8000)
+			{
+				return modeFlag == 1 ? eRam[0x2000 * ramBankNumber + (address - 0xA000)] : eRam[address - 0xA000];
+			}
+			break;
+
+		case MBC3:
+			if (!sRamEnabled)
+				return 0xFF;
+
+			if (!mappedRTCRegister)
 			{
 				return eRam[0x2000 * ramBankNumber + (address - 0xA000)];
 			}
-			else
+			else if (!latchOccurred)
 			{
 				return 0xFF;
 			}
+
+			switch (mappedRTCRegister)
+			{
+			case 0x08:
+				return rtcLatched.s;
+				break;
+
+			case 0x09:
+				return rtcLatched.m;
+				break;
+
+			case 0x0A:
+				return rtcLatched.h;
+				break;
+
+			case 0x0B:
+				return rtcLatched.dl;
+				break;
+			case 0x0C:
+				return rtcLatched.dh;
+				break;
+			}
+			break;
+
+		case MBC5:
+			return sRamEnabled ? eRam[0x2000 * ramBankNumber + (address - 0xA000)] : 0xFF;
+			break;
 		}
 	}
 	else if (address >= 0xC000 && address <= 0xDFFF)
@@ -264,7 +242,6 @@ void MMU::write8(uint16_t address, uint8_t value)
 
 		if (address >= 0x4000 && address <= 0x5FFF)
 		{
-
 			// if the value is between 0 and 3, set the ram bank value
 			if (value >= 0x00 && value <= 0x03)
 			{
@@ -283,7 +260,6 @@ void MMU::write8(uint16_t address, uint8_t value)
 		{
 			// write of value 0x00 followed by another write with the value 0x01 will copy the current state of the RTC registers and make them accessible
 			// using the RTC register select feature.
-		
 			if (lastLatchWrite == 0x00 && value == 0x01)
 			{
 				rtcLatched.s = rtc.s;

@@ -35,8 +35,7 @@ struct Pixel
 	PALETTE palette;
 	uint8_t xPos;
 	
-	// for CGB there is also a prite priority thing
-
+	// for CGB there is also a sprite priority thing
 	uint8_t backgroundPrio; // only relevant for sprites keeps the value of bit7 (obj to bg prio) of the sprite flags
 };
 
@@ -62,7 +61,6 @@ struct Sprite
 
 	// byte 3
 	SpriteFlags flags;
-
 };
 
 enum DRAWINGSTATE
@@ -77,7 +75,6 @@ enum DRAWINGSTATE
 	SP_FETCH_TILE_NUM,
 	SP_FETCH_TILE_LOW,
 	SP_FETCH_TILE_HIGH_AND_PUSH,
-	
 };
 
 class PPU
@@ -102,8 +99,6 @@ public:
 	unsigned int spFetchTileHighCycles = 0;
 	unsigned int spPushToFifoCycles = 0;
 
-	bool canDraw = true;
-
 	DRAWINGSTATE bgDrawingState = BG_FETCH_TILE_NUM;
 	DRAWINGSTATE spDrawingState = SP_FETCH_TILE_NUM;
 
@@ -115,10 +110,8 @@ public:
 	MODE ppuMode = OAM_SCAN_2;
 
 	std::queue<Pixel> bgPixelFIFO;
-	
 	// using a vector instead of a queue because we have to replace transparent obj pixels with opaque ones
 	std::vector<Pixel> spPixelFIFO;
-
 
 	std::vector<uint8_t> oamByteBuffer;
 
@@ -156,7 +149,31 @@ public:
 	bool spriteTallMode();
 	bool isSpriteEnabled();
 	bool bgAndWindowEnabled();
-	void reset();
+	void resetFrame();
+	void resetScanline();
+
+	void disableDisplay();
+	void oamScan();
+	void drawingMode();
+	void hBlankMode();
+	void prepareNextScanline();
+	void enterVBlank();
+	void checkIfVblankEnded();
+
+	void windowFetchCheck();
+	void fetchBgTileNum();
+	void fetchBgTileLow();
+	void fetchBgTileHigh();
+	void bgPushToFIFO();
+
+	void checkIfReachedSprite();
+	void checkSpriteFetchCancel();
+	void fetchSpTileNum();
+	void fetchSpTileLow();
+	void fetchSpTileHighAndPush();
+
+	void firstBgFetchDiscard();
+	void pushToLCD();
 
 	uint16_t bgFetchFirstByteAddress;
 	bool firstBgFetch = true;

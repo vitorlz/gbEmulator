@@ -52,7 +52,6 @@ uint16_t CPU::getHL()
 
 void CPU::setFlagZ(bool value)
 {
-
 	/*std::cout << "SET FLAG VALUE: " << (int)value << "\n";*/
 	regs[REG_F] = (regs[REG_F] & ~(1 << 7)) | (value << 7);
 }
@@ -207,73 +206,13 @@ void CPU::handleInterrupts()
 
 		AddCycle();
 	}
-	
 }
 
-void CPU::write8(uint16_t address, uint8_t value)
-{
-	if (address == DIV_ADDRESS)
-	{
-		value = 0x00;
-		DIV = 0;
-	}
-
-	if (address == TIMA_ADDRESS)
-	{
-		//std::cout << "wrote to TIMA" << "\n";
-		timaReloadPending = false;
-
-		mmu.cancelInterrupt(TIMER);
-	}
-
-	if (mmu.dmaTransferRequested && (address < 0xFF80 || address >  0xFFFE) && address != 0xFF00)
-	{
-		AddCycle();
-		return;
-	}
-	else
-	{
-
-		if (address == 0xFF00)
-		{
-			value = ((mmu.read8(address) & ~(3 << 4)) | (((value >> 4) & 3) << 4));
-			mmu.write8(address, value);
-		}
-		else
-		{
-			mmu.write8(address, value);
-		}
-		
-		
-		AddCycle();
-	}
-}
-
-
-uint16_t CPU::read16(uint16_t address)
-{
-	uint16_t lsb = read8(address);
-	uint16_t msb = read8(address + 1);
-
-	return (msb << 8) | lsb;
-}
-
-void CPU::write16(uint16_t address, uint16_t value)
-{
-	uint16_t lsb = value & 0xFF;
-	uint16_t msb = value >> 8;
-
-	write8(address, lsb);
-	write8(address + 1, msb);
-}
-
-void CPU::AddCycle()
+void CPU::handleRTC()
 {
 	if (mmu.cartridgeHasRTC && !(mmu.rtc.dh >> 6 & 1))
 	{
 		mmu.rtcCycleCounter += 4;
-
-		//std::cout << mmu.rtcCycleCounter << "\n";
 
 		if (mmu.rtcCycleCounter == 4194304)
 		{
@@ -299,29 +238,22 @@ void CPU::AddCycle()
 
 						if (mmu.rtc.rtcDayCounter > 511)
 						{
-
-							//std::cout << "flag set" << "\n";
 							mmu.rtc.rtcDayCounter = 0;
 							mmu.rtc.dh = mmu.rtc.dh | (1 << 7);
 						}
-						
+
 					}
 				}
 			}
-
-			//std::cout << "RTC hours: " << std::dec << "days: " << (int)mmu.rtc.rtcDayCounter << (int)mmu.rtc.h << " minutes: " << (int)mmu.rtc.m << " seconds: " << (int)mmu.rtc.s;
-
 			mmu.rtcCycleCounter = 0;
 		}
-
 	}
+}
 
+void CPU::handleDMATransfer()
+{
 	if (mmu.dmaTransferRequested)
 	{
-
-		/*std::cout << "dma transfer requested! " << "\n";
-		std::cout << "dma delay: " << mmu.dmaDelay << "\n";*/
-
 		if (mmu.dmaDelay >= 1 && mmu.dmaDelay < 161)
 		{
 			mmu.dmaTransfer(mmu.dmaDelay);
@@ -337,87 +269,144 @@ void CPU::AddCycle()
 			mmu.dmaDelay++;
 		}
 	}
-	
-	// TICK PPU 4X --> ppu.tick(4);
+}
+
+void CPU::handleTimers()
+{
+	DIV++;
+
+	uint8_t bitPosition;
+	uint8_t TAC = mmu.read8(TAC_ADDRESS);
+	uint8_t tacClockSelect = TAC & 3;
+
+	switch (tacClockSelect)
+	{
+	case 0x00:
+	{
+		bitPosition = 9;
+		break;
+	}
+	case 0x01:
+	{
+		bitPosition = 3;
+		break;
+	}
+	case 0x02:
+	{
+		bitPosition = 5;
+		break;
+	}
+	case 0x03:
+	{
+		bitPosition = 7;
+		break;
+	}
+	}
+
+	bool selectedDIVBit = (DIV >> bitPosition) & 1;
+	bool tacTimerEnableBit = (TAC >> 2) & 1;
+	bool currentANDResult = selectedDIVBit && tacTimerEnableBit;
+
+	if (lastANDResult == 1 && currentANDResult == 0)
+	{
+		uint8_t TIMA = mmu.read8(TIMA_ADDRESS);
+
+		if (TIMA == 0xFF)
+		{
+			timaReloadPending = true;
+			mmu.write8(TIMA_ADDRESS, 0x00);
+
+		}
+		else if (!timaReloadPending)
+		{
+			mmu.write8(TIMA_ADDRESS, TIMA + 1);
+		}
+	}
+	lastANDResult = currentANDResult;
+
+	divCycles++;
+
+	if (divCycles >= 256)
+	{
+		mmu.write8(DIV_ADDRESS, DIV >> 8);
+
+		divCycles = 0;
+	}
+}
+
+void CPU::write8(uint16_t address, uint8_t value)
+{
+	if (address == DIV_ADDRESS)
+	{
+		value = 0x00;
+		DIV = 0;
+	}
+
+	if (address == TIMA_ADDRESS)
+	{
+		//std::cout << "wrote to TIMA" << "\n";
+		timaReloadPending = false;
+
+		mmu.cancelInterrupt(TIMER);
+	}
+
+	if (mmu.dmaTransferRequested && (address < 0xFF80 || address >  0xFFFE) && address != 0xFF00)
+	{
+		AddCycle();
+		return;
+	}
+	else
+	{
+		if (address == 0xFF00)
+		{
+			value = ((mmu.read8(address) & ~(3 << 4)) | (((value >> 4) & 3) << 4));
+			mmu.write8(address, value);
+		}
+		else
+		{
+			mmu.write8(address, value);
+		}
+		
+		AddCycle();
+	}
+}
+
+
+uint16_t CPU::read16(uint16_t address)
+{
+	uint16_t lsb = read8(address);
+	uint16_t msb = read8(address + 1);
+
+	return (msb << 8) | lsb;
+}
+
+void CPU::write16(uint16_t address, uint16_t value)
+{
+	uint16_t lsb = value & 0xFF;
+	uint16_t msb = value >> 8;
+
+	write8(address, lsb);
+	write8(address + 1, msb);
+}
+
+void CPU::AddCycle()
+{
+	handleRTC();
+	handleDMATransfer();
+
 	if (timaReloadPending)
 	{
 		uint8_t TMA = mmu.read8(TMA_ADDRESS);
 		mmu.write8(TIMA_ADDRESS, TMA);
-
 		mmu.requestInterrupt(TIMER);
-
 		timaReloadPending = false;
 	}
 	
 	for (int i = 0; i < 4; i++)
 	{
 		tCycles++;
-			
 		ppu.tick();
-		
-		
-		DIV++;
-
-		uint8_t bitPosition;
-		uint8_t TAC = mmu.read8(TAC_ADDRESS);
-		uint8_t tacClockSelect = TAC & 3;
-
-		switch (tacClockSelect)
-		{
-			case 0x00:
-			{
-				bitPosition = 9;
-				break;
-			}
-			case 0x01:
-			{
-				bitPosition = 3;
-				break;
-			}
-			case 0x02:
-			{
-				bitPosition = 5;
-				break;
-			}
-			case 0x03:
-			{
-				bitPosition = 7;
-				break;
-			}
-		}
-
-		bool selectedDIVBit = (DIV >> bitPosition) & 1;
-
-		bool tacTimerEnableBit = (TAC >> 2) & 1;
-
-		bool currentANDResult = selectedDIVBit && tacTimerEnableBit;
-
-		if (lastANDResult == 1 && currentANDResult == 0)
-		{
-			uint8_t TIMA = mmu.read8(TIMA_ADDRESS);
-
-			if (TIMA == 0xFF)
-			{
-				timaReloadPending = true;
-				mmu.write8(TIMA_ADDRESS, 0x00);
-
-			}
-			else if(!timaReloadPending)
-			{
-				mmu.write8(TIMA_ADDRESS, TIMA + 1);
-			}
-		}
-		
-		lastANDResult = currentANDResult;
-
-		divCycles++;
-		
-		if (divCycles >= 256)
-		{
-			mmu.write8(DIV_ADDRESS, DIV >> 8);
-
-			divCycles = 0;
-		}
+		handleTimers();
 	}
 }
 

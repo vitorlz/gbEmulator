@@ -4,14 +4,9 @@
 #include "mmu.h"
 #include "ppu.h"
 
-
-// cpu is going to tick the other systems.
 class CPU
 {
 public:
-
-	// THE DEFAULT VALUES ARE THE ONES SUPPOSED TO BE SET BY THE BOOT ROM
-
 	CPU(MMU& mmu, PPU& ppu);
 
 	uint8_t regs[8]{0xFF, 0x13, 0x00, 0xC1, 0x84, 0x03, 0x00, 0x01};
@@ -49,13 +44,16 @@ public:
 	void handleInterrupts();
 
 	bool HALT = false;
-
 	bool IME = 0;
-
 	bool updateIME = 0;
+	
 	void AddCycle(); // --> increment tCycles by 4 and tick systems 4x.
 
 	unsigned int tCycles;
+
+	void handleRTC();
+	void handleTimers();
+	void handleDMATransfer();
 
 	uint8_t fetch8(); // --> same as read but reads using PC and increases it
 	uint16_t fetch16();// --> same as read16 but reads using PC twice and increases it twice
