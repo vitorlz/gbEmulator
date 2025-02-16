@@ -12,6 +12,9 @@ PPU::PPU(MMU& mmu)
 	: mmu(mmu), window(window)
 {
 	setLY(0);
+	oamByteBuffer.reserve(4);
+	spPixelFIFO.reserve(8);
+	spritesBuffer.reserve(10);
 };
 
 void PPU::statInterruptCheck()
@@ -60,9 +63,7 @@ void PPU::reset()
 
 	while (!bgFetchBuffer.empty())
 	{
-
 		bgFetchBuffer.pop();
-
 	}
 
 	spPixelFIFO.clear();
@@ -105,6 +106,7 @@ void PPU::tick()
 	{
 		reset();
 		setMode(HBLANK_0);
+		statInterruptCheck();
 		setSTATCoincidenceFlag(false);
 		displayDisabled = true;
 	}
@@ -120,44 +122,44 @@ void PPU::tick()
 		return;
 	}
 
-	displayWasEnabledBefore = isDisplayEnabled();
-
-	static int totalCycles = 0;
+	// display has to be enabled at least once so that it can be disabled
+	if (!displayWasEnabledBefore)
+	{
+		displayWasEnabledBefore = isDisplayEnabled();
+	}
 
 	scanlineCycles++;
-	
 
 	if (ppuMode == VBLANK_1)
 	{
 		if (getLY() == 154)
 		{
-			totalCycles = 0;
 			ppuMode = OAM_SCAN_2;
 			setLY(0);
+			lycEqualLy = checkLycEqualLy();
+			setSTATCoincidenceFlag(lycEqualLy);
+			statInterruptCheck();
 		}
 		windowLineCounter = 0;
 		wyEqualLyThisFrame = false;
 		wyEqualLy = false;
 	}
-
-	lycEqualLy = checkLycEqualLy();
-	setSTATCoincidenceFlag(lycEqualLy);
 	
 	// ----------------------------- OAM SCAN ---------------------------------------------------
 	if (scanlineCycles <= 80 && ppuMode != VBLANK_1)
 	{	
-		
 		if (scanlineCycles == 1)
 		{
 			canDraw = false;
 			setMode(OAM_SCAN_2);
+			statInterruptCheck();
 		}
 
 		// oam scan --> check a new oam entry every 2 t-cycles
 		if (scanlineCycles % 2 == 0)
 		{
 			uint8_t currentLY = getLY();
-			std::vector<uint8_t> oamByteBuffer;
+			
 			// each sprite is 4 bytes --> read a sprite from oam
 			for (int i = 0; i < 4; i++)
 			{
@@ -194,6 +196,7 @@ void PPU::tick()
 				spritesBuffer.push_back(sprite);
 			}
 
+			oamByteBuffer.clear();
 			oamScanCounter++;			
 		}
 	}
@@ -202,20 +205,20 @@ void PPU::tick()
 		oamScanCounter = 0;
 	}
 
-	if (!wyEqualLyThisFrame)
-	{
-		wyEqualLyThisFrame = getLY() == getWY();
-	}
-
 	// ----------------------------- DRAWING ---------------------------------------------------
 	if (scanlineCycles > 80 && !exittedDrawingMode && ppuMode != VBLANK_1)
 	{
+		if (!wyEqualLyThisFrame)
+		{
+			wyEqualLyThisFrame = getLY() == getWY();
+		}
 
 		static int drawingCycles = 0;
 
 		if (scanlineCycles == 81)
 		{
 			setMode(DRAWING_3);
+			statInterruptCheck();
 		}
 
 		if (isWindowDisplayEnabled())
@@ -254,7 +257,7 @@ void PPU::tick()
 		}
 
 		// disable first fetch condition so that we can start discarding scx%8 pixels.
-		if (scanlineCycles > 86)
+		if (scanlineCycles > 86 && firstBgFetch)
 		{
 			firstBgFetch = false;
 		}
@@ -297,7 +300,7 @@ void PPU::tick()
 			{
 				uint16_t baseAddress = tileDataSelect() ? 0x8000 : 0x9000;
 
-				// remember --> 2 bits per pixel --> 2 bytes = 8 pixels --> the byte fetched here combined with the byte fetched in the next step will
+				// 2 bits per pixel --> 2 bytes = 8 pixels --> the byte fetched here combined with the byte fetched in the next step will
 				// yield 8 pixels;
 				if (baseAddress == 0x8000)
 				{
@@ -365,35 +368,27 @@ void PPU::tick()
 				}
 
 				bgFetchTileHighCycles = 0;
-
 			}
-
 		}
 		else if (bgDrawingState == BG_PUSH_TO_FIFO )
 		{
-
 			bgPushToFifoCycles++;
 
 			if (bgPushToFifoCycles >= 2)
 			{
 				if (bgPixelFIFO.empty() && !bgFetchBuffer.empty() && !spriteFetchEnabled)
 				{
-					
-
 					for (int i = 0; i < 8; i++)
 					{
 						bgPixelFIFO.push(bgFetchBuffer.front());
 						bgFetchBuffer.pop();
-
-						fetcherXPositionCounter++;
+						
 					}
-
+					fetcherXPositionCounter += 8;
 					bgPushToFifoCycles = 0;
 					bgDrawingState = BG_FETCH_TILE_NUM;
-					
 				}
 			}
-			
 		}
 
 		// CHECK IF REACHED A SPRITE 
@@ -435,7 +430,6 @@ void PPU::tick()
 				{
 					currentSpTileNumber = spriteBeingFetched.tileNum;
 				
-
 					spFetchTileNumCycles = 0;
 					spDrawingState = SP_FETCH_TILE_LOW;
 				}	
@@ -472,7 +466,6 @@ void PPU::tick()
 
 				if (spFetchTileHighCycles >= 2)
 				{
-
 					uint16_t spFetchSecondByteAddress = spFetchFirstByteAddress + 1;
 					spFetchSecondByte = mmu.read8(spFetchSecondByteAddress);
 
@@ -497,15 +490,12 @@ void PPU::tick()
 							
 						uint8_t firstColorNumBit = (spFetchSecondByte >> bitOffset) & 1;
 						uint8_t secondColorNumBit = (spFetchFirstByte >> bitOffset) & 1;
+						
 						pixel.xPos = spriteBeingFetched.xPos + i;
-
 						pixel.colorNum = (firstColorNumBit) << 1 | secondColorNumBit;
-
-
 						pixel.palette = spriteBeingFetched.flags.palette ? OBP1 : OBP0;
 						pixel.backgroundPrio = spriteBeingFetched.flags.prio;
 
-						
 						// replace transparent pixels in the FIFO that overlap with this current pixel
 						bool transparentPixelOverlap = false;
 						if (spFIFOSizeBeforePush != 0)
@@ -515,7 +505,6 @@ void PPU::tick()
 								Pixel fifoPixel = spPixelFIFO[j];
 								if (((fifoPixel.xPos == pixel.xPos) && (fifoPixel.colorNum == 0 ||(fifoPixel.backgroundPrio > pixel.backgroundPrio))))
 								{
-
 									if (pixel.colorNum != 0)
 									{
 										spPixelFIFO[j] = pixel;
@@ -527,7 +516,6 @@ void PPU::tick()
 
 						if ((spPixelFIFO.size() < 8 && i >= spFIFOSizeBeforePush) && !transparentPixelOverlap)
 						{	
-
 							spPixelFIFO.push_back(pixel);
 						}
 					}
@@ -661,22 +649,23 @@ void PPU::tick()
 				numOfPixelsDiscarded = 0;
 				scanlineDrawnPixels = 0;
 				
-				while(!bgPixelFIFO.empty())
+				while (!bgPixelFIFO.empty())
 				{
 					bgPixelFIFO.pop();
 				}
 
-				while(!bgFetchBuffer.empty())
+				while (!bgFetchBuffer.empty())
 				{
-					
 					bgFetchBuffer.pop();
-					
 				}
 
 				drawingCycles = 0;
 
 				spPixelFIFO.clear();
 				spritesBuffer.clear();
+
+				lycEqualLy = checkLycEqualLy();
+				statInterruptCheck();
 
 				LX = 0;
 				firstBgFetch = true;
@@ -686,8 +675,6 @@ void PPU::tick()
 				spriteFetchEnabled = false;
 			}
 		}
-
-
 	}
 
 	// ---------------------------------------- HBLANK --------------------------------------------------
@@ -697,6 +684,7 @@ void PPU::tick()
 		if (firstHBlankCycle)
 		{
 			setMode(HBLANK_0);
+			statInterruptCheck();
 			firstHBlankCycle = false;
 		}
 	}
@@ -704,6 +692,10 @@ void PPU::tick()
 	if (scanlineCycles >= 456)
 	{
 		setLY(getLY() + 1);
+		lycEqualLy = checkLycEqualLy();
+		setSTATCoincidenceFlag(lycEqualLy);
+		statInterruptCheck();
+		
 		if (windowPixelWasDrawn)
 		{
 			windowLineCounter++;
@@ -716,19 +708,12 @@ void PPU::tick()
 
 	if (getLY() == 144 && ppuMode != VBLANK_1)
 	{
-		// push pixels from lcd array to displayTexture.
 		draw();
 		canDraw = true;
 		setMode(VBLANK_1);
 		mmu.requestInterrupt(VBLANK);
 	}
-
-	totalCycles++;
-
-	statInterruptCheck();
 }
-
-
 
 bool PPU::isDisplayEnabled()
 {

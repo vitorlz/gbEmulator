@@ -4,17 +4,7 @@
 
 uint8_t MMU::read8(uint16_t address)
 {
-
-	// put if def right here and it will return before the rest of the if statements if the thing is defined
-	// joypad not implemented yet so return 0xFF
-	/*if (address == 0xFF00)
-	{
-		return 0xFF;
-	}*/
-
-	//return testArray[address];
-
-	if (address <= 0x3FFF) // --> 16 kib rom
+	if (address <= 0x3FFF) 
 	{
 		if (mbc == MBC0)
 		{
@@ -22,7 +12,6 @@ uint8_t MMU::read8(uint16_t address)
 		}
 		else if (mbc == MBC1)
 		{
-
 			if (modeFlag == 0)
 			{
 				return fullrom[address];
@@ -31,7 +20,6 @@ uint8_t MMU::read8(uint16_t address)
 			{
 				return fullrom[0x4000 * getMBC1ZeroBankNumber() + address];
 			}
-			
 		}
 		else if (mbc == MBC3)
 		{
@@ -41,7 +29,6 @@ uint8_t MMU::read8(uint16_t address)
 		{
 			return fullrom[address];
 		}
-		 
 	}
 	else if (address >= 0x4000 && address <= 0x7FFF)
 	{
@@ -51,7 +38,6 @@ uint8_t MMU::read8(uint16_t address)
 		}
 		else if (mbc == MBC1)
 		{
-			//std::cout << "mbc1 high bank number: " << std::dec << (int)getMBC1HighBankNumber() << "\n";
 			return fullrom[0x4000 * getMBC1HighBankNumber() + (address - 0x4000)];
 		}
 		else if (mbc == MBC3)
@@ -139,7 +125,6 @@ uint8_t MMU::read8(uint16_t address)
 		{
 			if (sRamEnabled)
 			{
-				std::cout << "rambanknumber read: " << std::dec << (int)ramBankNumber << "\n";
 				return eRam[0x2000 * ramBankNumber + (address - 0xA000)];
 			}
 			else
@@ -181,27 +166,12 @@ uint8_t MMU::read8(uint16_t address)
 
 void MMU::write8(uint16_t address, uint8_t value)
 {
-
-	/*if (address == 0xFF01)
-	{
-		std::cout <<  (char)value;
-	}*/
-
 	if (address == 0xFF46)
 	{
 		dmaTransferRequested = true;
 
 		dmaSource = dmaSource | ((uint16_t)value << 8);
 	}
-
-	// fs there is a dma transfer happening and the cpu tries to access  maybe block writes and reads to (address < 0xFF80 || address >  0xFFFE) during dma
-	// usually games handle that and only do dma transfers during vblank
-	
-	//testArray[address] = value;
-	//if (address <= 0x7FFF) // --> 16 kib rom
-	//{
-	//	std::cout << "attempting to write to rom"; // --> have to subtract starting memory position of array 
-	//}
 
 	if (mbc == MBC1)
 	{
@@ -256,23 +226,17 @@ void MMU::write8(uint16_t address, uint8_t value)
 		if (address >= 0x4000 && address <= 0x5FFF)
 		{
 			ramBankNumber = value & 3;
-
-			//std::cout << "rambanknumber: " << std::dec << (int)ramBankNumber << "\n";
 		}
 
 		if (address >= 0x6000 && address <= 0x7FFF)
 		{
-			//std::cout << "toggling bank mode" << "\n";
 			modeFlag = value & 1;
-			//std::cout << "mode flag: " << modeFlag << "\n";
 		}
 	}
 	else if (mbc == MBC3)
 	{
 		if (address <= 0x1FFF)
 		{
-			// should also enable access to the RTC registers
-
 			if ((value & 15) == 10)
 			{
 
@@ -288,7 +252,6 @@ void MMU::write8(uint16_t address, uint8_t value)
 		{
 			// romBankNumber is a 7 bit register in MBC3, it is never 0. If we try to write 0 to it we should write 1 instead.
 			// upper bits are ignored.
-
 			if ((value & 127) == 0)
 			{
 				romBankNumber = 1;
@@ -296,9 +259,7 @@ void MMU::write8(uint16_t address, uint8_t value)
 			else
 			{
 				romBankNumber = value & 127;
-				//std::cout << "rombank number: " << std::dec << (int)romBankNumber << "\n";
 			}
-
 		}
 
 		if (address >= 0x4000 && address <= 0x5FFF)
@@ -309,16 +270,12 @@ void MMU::write8(uint16_t address, uint8_t value)
 			{
 				ramBankNumber = value & 3;
 
-				//std::cout << "ram bank number: " << std::dec << (int)ramBankNumber << "\n";
 				mappedRTCRegister = 0;
 			}
 			else if (value >= 0x08 && value <= 0x0C)
 			{
 				// the corresponding RTC register is mapped to the external ram region
 				mappedRTCRegister = value;
-
-				//std::cout << "mapped RTC register: " << std::dec << (int)mappedRTCRegister << "\n";
-				
 			}
 		}
 
@@ -384,11 +341,8 @@ void MMU::write8(uint16_t address, uint8_t value)
 			else
 			{
 				ramBankNumber = value;
-			}
-			
-		}
-
-		
+			}	
+		}	
 	}
 
 	if (address >= 0x8000 && address <= 0x9FFF)
@@ -411,27 +365,22 @@ void MMU::write8(uint16_t address, uint8_t value)
 				}
 				else if (sRamSize == 0x8000)
 				{
-
 					if (modeFlag == 1)
 					{
-						//std::cout << "rambanknumber when fetching from eram: " << std::dec << (int)ramBankNumber << "\n";
 						eRam[0x2000 * ramBankNumber + (address - 0xA000)] = value;
 					}
 					else
 					{
 						eRam[address - 0xA000] = value;
 					}
-
 				}
 			}
 		}
 		else if (mbc == MBC3)
 		{
-
 			if (sRamEnabled)
 			{
 				// external ram mapped to this memory region
-
 				if (mappedRTCRegister == 0x08)
 				{
 					rtc.s = 0b00111111 & value;
@@ -454,8 +403,6 @@ void MMU::write8(uint16_t address, uint8_t value)
 				{
 					rtc.dl = 0b11111111 & value;
 					rtcLatched.dl = 0b11111111 & value;
-
-
 				}
 				else if (mappedRTCRegister == 0x0C)
 				{
@@ -470,13 +417,11 @@ void MMU::write8(uint16_t address, uint8_t value)
 		}
 		else if (mbc == MBC5)
 		{
-
 			if (sRamEnabled)
 			{
 				eRam[0x2000 * ramBankNumber + (address - 0xA000)] = value;
 			}
 		}
-		
 	}
 	else if (address >= 0xC000 && address <= 0xDFFF)
 	{
@@ -501,20 +446,6 @@ void MMU::write8(uint16_t address, uint8_t value)
 	else if (address == 0xFFFF) // --> Interrupt Enable register (IE)
 	{
 		ie[address - 0xFFFF] = value;
-	}
-}
-
-void MMU::writeToRomMemory(uint16_t index, uint8_t value)
-{
-	//testArray[index] = value;
-	// if testing use testArray
-	if (index <= 0x3FFF) // --> 16 kib rom
-	{
-		rom0[index] = value; // --> have to subtract starting memory position of array 
-	}
-	else if (index >= 0x4000 && index <= 0x7FFF)
-	{
-		romBanks[index - 0x4000] = value;
 	}
 }
 

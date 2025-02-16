@@ -141,7 +141,7 @@ void  RenderingManager::renderUI()
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("Load rom...", "Ctrl+O")) 
+            if (ImGui::MenuItem("Load rom...")) 
             {   
                 const char* filter[] = { "*.gb", "*.gbc"}; 
                 const char* filePath = tinyfd_openFileDialog("Open ROM File", "", 2, filter, "ROM Files", 0);
@@ -163,7 +163,7 @@ void  RenderingManager::renderUI()
                     std::cout << "No file selected." << std::endl;
                 }
             }
-            if (ImGui::MenuItem("Load save file...", "Ctrl+S"))
+            if (ImGui::MenuItem("Load save file..."))
             { 
                 const char* filePath = tinyfd_openFileDialog("Open Save File", "", 0, nullptr, "*", 0);
 
@@ -178,15 +178,13 @@ void  RenderingManager::renderUI()
                     std::cout << "No file selected." << std::endl;
                 }
             }
-            if (ImGui::MenuItem("Save as...", "Ctrl+S"))
+            if (ImGui::MenuItem("Save as..."))
             {
-
                 std::string defaultName = gb.filePath + "_save";
-                //const char* const filters[] = { "All Files (*.*)" }; 
                 const char* filename = tinyfd_saveFileDialog("Save File As", defaultName.c_str(), 0, nullptr, NULL);
 
                 if (filename != NULL) {
-                    printf("Selected file: %s\n", filename);  // File path selected by user
+                    printf("Selected file: %s\n", filename);  
                     gb.saveFilePath = filename;
                     gb.saveGame();
                 }
@@ -194,9 +192,29 @@ void  RenderingManager::renderUI()
                     printf("No file selected.\n");
                 }
             }
-            if (ImGui::MenuItem("Save", "Ctrl+S"))
+            if (ImGui::MenuItem("Save"))
             {
                 gb.saveGame();
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Speed"))
+        {
+            if (ImGui::MenuItem("1x"))
+            {
+                gb.fpsLimit = 1.0 / 60.0;
+            }
+            if (ImGui::MenuItem("2x"))
+            {
+                gb.fpsLimit = 1.0 / 120.0;
+            }
+            if (ImGui::MenuItem("4x"))
+            {
+                gb.fpsLimit = 1.0 / 240.0;
+            }
+            if (ImGui::MenuItem("MAX."))
+            {
+                gb.fpsLimit = 0.0;
             }
             ImGui::EndMenu();
         }

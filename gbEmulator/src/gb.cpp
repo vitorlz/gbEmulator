@@ -377,14 +377,14 @@ void GameBoy::loadSave(std::string path)
 
 bool GameBoy::run()
 {
-    const double fpsLimit = 1.0 / 60.0;
-    double lastUpdateTime = 0;  
     double lastFrameTime = 0;   
+    double lastFrameTimeCycles = 0;
+    double lastUpdateTimeCycles = 0;
    
     while (!glfwWindowShouldClose(window) && !restartRequested)
     {
         double currentTime = glfwGetTime();
-        double deltaTime = currentTime - lastUpdateTime;
+        double deltaTime = currentTime - lastUpdateTimeCycles;
 
         if (validRomLoaded)
         {
@@ -401,27 +401,46 @@ bool GameBoy::run()
             handleInterrupts();
         }
         
-        if ((currentTime - lastFrameTime) >= fpsLimit)
+        if ((currentTime - lastFrameTime) >= (1.0/60.0))
         {
             processInput();
 
-            glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            glUseProgram(ppu.shaderProgram);
-            glBindTexture(GL_TEXTURE_2D, ppu.displayTexture);
-            glBindVertexArray(ppu.VAO);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            if (validRomLoaded)
+            {
+                glUseProgram(ppu.shaderProgram);
+                glBindTexture(GL_TEXTURE_2D, ppu.displayTexture);
+                glBindVertexArray(ppu.VAO);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
 
             renderingManager->renderUI();
 
             glfwSwapBuffers(window);
             glfwPollEvents();
-            // only set lastFrameTime when you actually draw something
+            
             lastFrameTime = currentTime;
         }
 
-        lastUpdateTime = currentTime;
+        static int frameCount = 0;
+        if (cpu.tCycles >= 70224)
+        {
+            frameCount++;
+            while ((glfwGetTime() - lastUpdateTimeCycles) < fpsLimit)
+            {
+            }
+
+            if (frameCount >= 10)
+            {
+                std::cout << "actual fps: " << 1 / (glfwGetTime() - lastUpdateTimeCycles) << "\n";
+                frameCount = 0;
+            }
+
+            lastUpdateTimeCycles = glfwGetTime();
+            cpu.tCycles = cpu.tCycles - 70224;
+        }
     }
     renderingManager->terminateUI();
     

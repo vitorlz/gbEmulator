@@ -63,8 +63,6 @@ public:
 	uint16_t zeroBankNumber = 0;
 	bool modeFlag = 0;
 
-	//bool rtcRegisterEnabled = false;
-
 	uint8_t mappedRTCRegister = 0;
 
 	bool cartridgeHasRTC = false;
@@ -109,10 +107,9 @@ public:
 
 	bool latchOccurred = false;
 
-	// whenever read using pc increase pc --> read8(PC++)
+	// whenever we read using pc increase pc --> read8(PC++)
 	uint8_t read8(uint16_t address);
 	void write8(uint16_t address, uint8_t value);
-	void writeToRomMemory(uint16_t index, uint8_t value);
 
 	bool dmaTransferRequested = false;
 	unsigned int dmaDelay = 0;

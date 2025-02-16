@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <vector>
 #include <queue>
 #include <memory>
@@ -8,7 +9,6 @@
 #define GLFW_INCLUDE_NONE
 
 #include <GLFW/glfw3.h>
-
 
 enum MODE
 {
@@ -33,7 +33,7 @@ struct Pixel
 	// color number (ignoring the palette) --> color value from tile data
 	uint8_t colorNum;
 	PALETTE palette;
-	int xPos;
+	uint8_t xPos;
 	
 	// for CGB there is also a prite priority thing
 
@@ -119,6 +119,8 @@ public:
 	// using a vector instead of a queue because we have to replace transparent obj pixels with opaque ones
 	std::vector<Pixel> spPixelFIFO;
 
+
+	std::vector<uint8_t> oamByteBuffer;
 
 	Sprite spriteBeingFetched;
 	uint16_t spFetchFirstByteAddress;

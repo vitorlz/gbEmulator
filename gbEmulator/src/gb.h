@@ -65,6 +65,8 @@ public:
 
 	bool validRomLoaded = false;
 
+	double fpsLimit = 1.0 / 60.0;
+
 	bool restartRequested = false;
 	bool loadSaveRequested = false;
 
