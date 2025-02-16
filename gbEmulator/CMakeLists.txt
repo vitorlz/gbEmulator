@@ -4,6 +4,11 @@ project(gbEmulator)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(CMAKE_GENERATOR MATCHES "Visual Studio")
+    set(CMAKE_CONFIGURATION_TYPES Release CACHE STRING "" FORCE)
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT gbEmulator)
+endif()
+
 # Use FetchContent to bring in third-party dependencies
 include(FetchContent)
 
