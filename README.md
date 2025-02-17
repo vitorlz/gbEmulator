@@ -1,7 +1,6 @@
 # gbEmulator
 Game Boy (DMG) emulator written in C++.
 
-
 https://github.com/user-attachments/assets/5637903a-0fda-4e8e-ac43-b969f2a94824
 
 <table>
@@ -16,6 +15,16 @@ https://github.com/user-attachments/assets/5637903a-0fda-4e8e-ac43-b969f2a94824
     <td><img src="gbEmulator/res/screenshots/zelda2.png" width="200"></td>
   </tr>
 </table>
+
+## Features
+<ul>
+  <li> CPU emulation (Sharp LR35902)</li>
+  <li> M-cycle accuracy </li>
+  <li> Pixel FIFO </li>
+  <li> MBC1, MBC3 (including Real Time Clock), and MBC5 support</li>
+  <li> Save states – save and load game progress at any point.</li>
+  <li> Fast forwarding </li>
+</ul>
 
 ## Building the Project
 
@@ -65,7 +74,6 @@ From the build directory
 - **Save As...:** Click **File** → **Save As...** to manually choose a name and location for your save file.  
 - If you previously **quick saved**, the emulator will automatically load the save file the next time you open the same ROM (*as long as the file name and path remain unchanged*).  
 
-Once your game is loaded, you can start playing using the controls listed below! 🎮 
 ## Commands
 | Button  | Key       |
 |---------|----------|
@@ -77,5 +85,15 @@ Once your game is loaded, you can start playing using the controls listed below!
 | **Right**| → (Right Arrow) |
 | **Start**| Enter   |
 | **Select**| Backspace |
+
+## Tests
+
+<table>
+  <tr>
+    <td><img src="gbEmulator/res/screenshots/dmg-acid2.png" width="200"></td>
+    <td><img src="gbEmulator/res/screenshots/blargg-cpu.png" width="200"></td>
+    <td><img src="gbEmulator/res/screenshots/blargg-instr-timing.png" width="200"></td>
+  </tr>
+</table>
 
 
