@@ -26,27 +26,28 @@ Clone the repository
 git clone https://github.com/vitorlz/gbEmulator.git
 ```
 ### On Windows:
+From the directory containing CMakeLists.txt:
 ```
 mkdir build
 cd build
 cmake ..
 cmake --build . --config Release
 ```
-to run:
+From the build directory:
 ```
 cd Release
 cp -r ../res .
 ./gbEmulator
 ```
 ### On macOS/Linux:
+From the directory containing CMakeLists.txt
 ```
 mkdir build && cd build
 cmake ..
 cmake --build . --config Release
 ```
-to run:
+From the build directory
 ```
-cd build
 ./gbEmulator
 ```
 
