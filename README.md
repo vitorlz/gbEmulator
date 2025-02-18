@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/5637903a-0fda-4e8e-ac43-b969f2a94824
 
 ## Building the Project
 
-Make sure you have the latest version of CMake installed.
+Make sure you have CMake installed.
 
 Clone the repository
 ```
