@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/5637903a-0fda-4e8e-ac43-b969f2a94824
   <li> M-cycle accuracy </li>
   <li> Pixel FIFO </li>
   <li> MBC1, MBC3 (including Real Time Clock), and MBC5 support</li>
-  <li> Save states – save and load game progress at any point.</li>
+  <li> Save states </li>
   <li> Fast forwarding </li>
 </ul>
 
